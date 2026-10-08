@@ -36,6 +36,9 @@ canvas { display: block; }
 .hud-top { position: absolute; top: calc(10px + env(safe-area-inset-top)); left: 10px; right: 10px;
   display: flex; align-items: center; gap: 8px; pointer-events: none; }
 .hud-top > * { pointer-events: auto; }
+/* Menu button as tall as the pill (52 px, more when a long title wraps). */
+.hud-top { align-items: stretch; }
+.hud-top .round-btn { width: 52px; height: auto; border-radius: 26px; } /* stretched with a two-line pill: stadium, not an oval */
 .task-pill { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; background: var(--card);
   border-radius: 26px; padding: 4px; box-shadow: var(--shadow-lift); }
 .pill-mid { flex: 1; min-width: 0; text-align: center; line-height: 1.15; }
