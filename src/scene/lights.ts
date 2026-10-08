@@ -24,16 +24,72 @@ const glowTex = (() => {
   return new THREE.CanvasTexture(c);
 })();
 
+type Icon = "bike" | "stand" | "walk";
+
+/**
+ * White pictogram on black, tinted by the lamp colour — like real lenses, where only the symbol lights up.
+ * ponytail: shapes drawn from memory and simplified, not to the RiLSA templates.
+ */
+const iconTex = (() => {
+  const cache = new Map<Icon, THREE.CanvasTexture>();
+  return (icon: Icon) => {
+    if (cache.has(icon)) return cache.get(icon)!;
+    const c = document.createElement("canvas");
+    c.width = c.height = 128;
+    const x = c.getContext("2d")!;
+    x.fillStyle = "#000";
+    x.fillRect(0, 0, 128, 128);
+    x.strokeStyle = x.fillStyle = "#fff";
+    x.lineCap = x.lineJoin = "round";
+    const line = (w: number, ...pts: number[]) => {
+      x.lineWidth = w;
+      x.beginPath();
+      x.moveTo(pts[0], pts[1]);
+      for (let i = 2; i < pts.length; i += 2) x.lineTo(pts[i], pts[i + 1]);
+      x.stroke();
+    };
+    const dot = (cx: number, cy: number, r: number) => (x.beginPath(), x.arc(cx, cy, r, 0, Math.PI * 2), x.fill());
+    if (icon === "bike") {
+      for (const cx of [36, 92]) (x.beginPath(), (x.lineWidth = 8), x.arc(cx, 80, 20, 0, Math.PI * 2), x.stroke());
+      line(8, 36, 80, 58, 80, 82, 56, 50, 56, 36, 80); // frame
+      line(8, 58, 80, 46, 46); // seat tube
+      line(8, 38, 46, 54, 46); // saddle
+      line(8, 92, 80, 80, 40, 90, 40); // fork and bar
+    } else if (icon === "stand") {
+      dot(64, 22, 12);
+      x.fillRect(50, 38, 28, 46); // body
+      line(10, 56, 84, 56, 116); // legs together
+      line(10, 72, 84, 72, 116);
+      line(8, 46, 42, 46, 80); // arms down
+      line(8, 82, 42, 82, 80);
+    } else {
+      dot(68, 20, 12);
+      line(16, 66, 38, 60, 74); // body, leaning into the step
+      line(10, 60, 74, 40, 114); // back leg
+      line(10, 60, 74, 72, 94, 84, 114); // front leg
+      line(8, 64, 44, 46, 66); // arms swinging
+      line(8, 64, 44, 84, 62);
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    cache.set(icon, t);
+    return t;
+  };
+})();
+
 /** Housing with lamps; returns a setter that switches which lamps glow. */
 function signalHead(lamps: Lamp[], r: number, icon?: "bike" | "walk") {
+  // Pedestrian signals: red shows a standing, green a walking figure, in square lenses.
+  const lensIcon = (color: Lamp): Icon | undefined => (icon === "walk" ? (color === "red" ? "stand" : "walk") : icon);
   const g = new THREE.Group();
   const h = lamps.length * r * 2.6;
   const box = new THREE.Mesh(new THREE.BoxGeometry(r * 2.8, h, r * 1.6), housingMat);
   box.castShadow = true;
   g.add(box);
   const parts = lamps.map((color, i) => {
-    const m = new THREE.MeshBasicMaterial({ color: COLORS[color] });
-    const lamp = new THREE.Mesh(new THREE.CircleGeometry(r, 20), m);
+    const ic = lensIcon(color);
+    const m = new THREE.MeshBasicMaterial({ color: COLORS[color], map: ic ? iconTex(ic) : null });
+    const lamp = new THREE.Mesh(icon === "walk" ? new THREE.PlaneGeometry(r * 1.9, r * 1.9) : new THREE.CircleGeometry(r, 20), m);
     lamp.position.set(0, h / 2 - r * 1.3 - i * r * 2.6, r * 0.81);
     // A flat halo on the housing front, not a camera-facing sprite: a sprite cut through the housing
     // when seen from above and also glowed out of the back of the head.
@@ -44,15 +100,6 @@ function signalHead(lamps: Lamp[], r: number, icon?: "bike" | "walk") {
     g.add(lamp, glow);
     return { color, m, glow };
   });
-  if (icon) {
-    // Small white plate above the head telling kids which signal is theirs.
-    const plate = new THREE.Mesh(new THREE.PlaneGeometry(r * 2.6, r * 1.6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    plate.position.set(0, h / 2 + r * 1, r * 0.81);
-    g.add(plate);
-    const sym = new THREE.Mesh(new THREE.CircleGeometry(r * 0.5, 12), new THREE.MeshBasicMaterial({ color: icon === "bike" ? 0x1d5fae : 0x111111 }));
-    sym.position.set(0, h / 2 + r * 1, r * 0.82);
-    g.add(sym);
-  }
   const set = (on: Lamp[]) => {
     for (const p of parts) {
       const lit = on.includes(p.color);
