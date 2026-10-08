@@ -41,10 +41,11 @@ export function listenForTaps(
 export interface Run {
   a: Actor;
   start: number; // seconds after "Los"
+  started?: boolean;
 }
 
 /** Distance after which an actor's rear has left the junction square. */
-const clearDist = (a: Actor) => a.path.getCurveLengths()[1] + a.len / 2;
+const clearDist = (a: Actor) => a.clear + a.len / 2;
 
 /** Moment the last actor has left the junction. */
 export const clearTime = (runs: Run[]) => Math.max(...runs.map((r) => r.start + clearDist(r.a) / r.a.speed));

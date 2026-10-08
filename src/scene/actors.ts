@@ -1,12 +1,13 @@
 import * as THREE from "three";
 import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
-import type { Participant } from "../types";
-import { ROAD_HALF, lanePath } from "./roads";
+import type { Layout, Participant } from "../types";
+import { ROAD_HALF, crossPath, lanePath } from "./roads";
 
 export interface Actor {
   p: Participant;
   obj: THREE.Group;
-  path: THREE.CurvePath<THREE.Vector3>;
+  path: THREE.Curve<THREE.Vector3>;
+  clear: number; // distance along the path after which the junction is left
   pin: HTMLDivElement;
   len: number; // metres along the driving direction, for the near-miss check
   speed: number; // m/s in the animation
@@ -72,15 +73,28 @@ function bike(shirt: number, helmet: number) {
 }
 
 // [width, length] in metres; bikes include the 1.4× display scale.
-const SIZE = { car: [1.8, 4.2], bus: [2.5, 11], bike: [0.9, 2.2], player: [0.9, 2.2] } as const;
+const SIZE = { car: [1.8, 4.2], bus: [2.5, 11], bike: [0.9, 2.2], player: [0.9, 2.2], pedestrian: [0.8, 0.8] } as const;
 // Slower than real life so kids can follow; bikes visibly slower than cars.
-const SPEED = { car: 7, bus: 5, bike: 4.5, player: 4.5 } as const;
+const SPEED = { car: 7, bus: 5, bike: 4.5, player: 4.5, pedestrian: 2.5 } as const;
 
-export function buildActor(p: Participant): Actor {
+function walker(shirt: number) {
+  const g = new THREE.Group();
+  for (const x of [-0.12, 0.12]) g.add(box(0.16, 0.8, 0.18, lambert(0x2e3a59), x, 0.4, 0));
+  g.add(box(0.5, 0.65, 0.28, lambert(shirt), 0, 1.12, 0));
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 8), lambert(0xe0a878));
+  head.position.y = 1.62;
+  head.castShadow = true;
+  g.add(head);
+  g.scale.setScalar(1.5); // readability boost, like the bikes
+  return g;
+}
+
+export function buildActor(p: Participant, layout: Layout): Actor {
   const model =
     p.kind === "car" ? car(p.color ?? 0x2f6fd6)
     : p.kind === "bus" ? bus()
     : p.kind === "player" ? bike(0xff7a00, 0x22aa44)
+    : p.kind === "pedestrian" ? walker(p.color ?? 0xe23d6e)
     : bike(p.color ?? 0x6a4fc4, 0x3355cc);
   const [w, l] = SIZE[p.kind];
   const isBike = p.kind === "bike" || p.kind === "player";
@@ -107,11 +121,14 @@ export function buildActor(p: Participant): Actor {
   }
   const label = new CSS2DObject(tag);
   // Local units: bike models are scaled 1.4×, so their label sits lower in model space.
-  label.position.y = p.kind === "bus" ? 4.2 : isBike ? 1.9 : 2.6;
+  label.position.y = p.kind === "bus" ? 4.2 : isBike || p.kind === "pedestrian" ? 1.9 : 2.6;
   model.add(label);
 
-  const path = lanePath(p.arm, p.move, isBike ? ROAD_HALF - 0.7 : ROAD_HALF / 2, ROAD_HALF + 1.5 + l / 2);
-  const actor = { p, obj: model, path, pin, len: l, speed: SPEED[p.kind] };
+  const { path, clear } =
+    p.kind === "pedestrian"
+      ? crossPath(layout, p.arm, p.side ?? 1)
+      : lanePath(layout, p.arm, p.move ?? "straight", isBike ? ROAD_HALF - 0.7 : ROAD_HALF / 2, l, p.inRing);
+  const actor = { p, obj: model, path, clear, pin, len: l, speed: SPEED[p.kind] };
   placeAt(actor, 0);
   return actor;
 }

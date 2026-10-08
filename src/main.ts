@@ -3,8 +3,10 @@ import { firstMistake, isCorrect } from "./check";
 import { scenarios } from "./content/scenarios";
 import { clearTime, listenForTaps, nearMissDist, nearMissSchedule, schedule, type Run } from "./play";
 import { buildActor, placeAt, type Actor } from "./scene/actors";
-import { buildRoads } from "./scene/roads";
-import { createWorld, disposeTree } from "./scene/world";
+import type { LightControl } from "./scene/lights";
+import { ARMS } from "./scene/roads";
+import { buildLevel, createWorld, disposeTree } from "./scene/world";
+import type { Arm } from "./types";
 import { createUI } from "./ui";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -16,6 +18,7 @@ let index = Math.min(Number(new URLSearchParams(location.search).get("s")) || 0,
 let level = new THREE.Group();
 let actors: Actor[] = [];
 let tapped: string[] = [];
+let lights = new Map<Arm, LightControl>();
 
 /** Running drive animation. `pair` is watched for the near-miss freeze. */
 let sim: {
@@ -28,18 +31,24 @@ let sim: {
 
 function load(i: number) {
   disposeTree(level);
-  level = new THREE.Group();
   const s = scenarios[i];
-  level.add(buildRoads(s.layout));
-  actors = s.participants.map(buildActor);
+  ({ group: level, lights } = buildLevel(s.layout));
+  actors = s.participants.map((p) => buildActor(p, s.layout));
   for (const a of actors) level.add(a.obj);
   world.scene.add(level);
+  world.resetCamera(s.layout.roundabout);
   reset();
   ui.showScenario(s.title, "Wer darf zuerst fahren? Tippe alle in der richtigen Reihenfolge an.");
 }
 
 function reset() {
   sim = null;
+  const s = scenarios[index];
+  for (const [arm, l] of lights) {
+    const spec = s.layout.arms[arm]!.light!;
+    l.car(spec.car);
+    if (spec.ped) l.ped(spec.ped);
+  }
   tapped = [];
   for (const a of actors) placeAt(a, 0);
   renderPins();
@@ -74,10 +83,33 @@ function drive() {
   }
 }
 
+/**
+ * Whoever sets off at a red light gets green first, so the animation never shows anyone running a red.
+ * ponytail: instant switch without the yellow/red-yellow in between; add timed phases when a level teaches them.
+ */
+function switchLightsFor(a: Actor) {
+  const l = lights.get(a.p.arm);
+  if (!l) return;
+  if (a.p.kind === "pedestrian") {
+    if (l.state.ped !== "green") (l.car("red"), l.ped("green"));
+    return;
+  }
+  if (l.state.car === "green") return;
+  const axis = (arm: Arm) => ARMS.indexOf(arm) % 2; // N/S = 0, E/W = 1
+  for (const [arm, other] of lights) {
+    const same = axis(arm) === axis(a.p.arm);
+    other.car(same ? "green" : "red");
+    if (other.state.ped) other.ped(same ? "red" : "green");
+  }
+}
+
 world.onFrame((dt) => {
   if (!sim) return;
   sim.t += dt;
-  for (const r of sim.runs) placeAt(r.a, Math.max(0, sim.t - r.start) * r.a.speed);
+  for (const r of sim.runs) {
+    if (!r.started && sim.t >= r.start) (r.started = true), switchLightsFor(r.a);
+    placeAt(r.a, Math.max(0, sim.t - r.start) * r.a.speed);
+  }
   const [x, y] = sim.pair ?? [];
   if (x && y && x.obj.position.distanceTo(y.obj.position) < nearMissDist(x, y)) {
     sim.done?.(true);
