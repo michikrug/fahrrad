@@ -464,7 +464,8 @@ export function createUI(root: HTMLElement) {
       resetTaskRead();
       choiceText = "";
       title.textContent = t;
-      task.textContent = taskText;
+      // The question itself on its own line, so a short one never breaks as "… Was / machst du?".
+      task.textContent = taskText.replace(/(?<=[.!?]) (?=[^.!?]+\?$)/, "\n");
       // Through the button, so it shows ⏹ while reading and can stop it.
       // A tick later: the answer cards of a choice task are added right after this.
       if (autoRead && map.classList.contains("hidden")) setTimeout(() => taskRead.click());

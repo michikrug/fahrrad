@@ -71,7 +71,7 @@ canvas { display: block; }
   padding: 14px 16px calc(12px + env(safe-area-inset-bottom)); }
 /* The question is something to read, the buttons below are actions: a divider keeps them apart. */
 .task-row { display: flex; align-items: center; gap: 6px; margin: 0 0 12px; padding-bottom: 12px; border-bottom: 2px solid var(--line); }
-.task-q { flex: 1; margin: 0; font: 800 clamp(15px, 4.3vw, 17px)/1.3 var(--font); text-align: center; white-space: pre-line; } /* keeps the break after "Wer darf zuerst?" */
+.task-q { flex: 1; margin: 0; font: 800 clamp(15px, 4.3vw, 17px)/1.3 var(--font); text-align: center; white-space: pre-line; text-wrap: pretty; } /* keeps the break after "Wer darf zuerst?" */
 /* Round ▶/■ read button next to the question; a spacer on the other side keeps the text centred. */
 .task-row::before { content: ""; flex: none; width: 46px; }
 .bar { display: flex; gap: 8px; }
