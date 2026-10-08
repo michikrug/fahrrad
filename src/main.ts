@@ -139,7 +139,7 @@ function load(i: number) {
   rig.setRider(actors.find((a) => a.p.kind === "player") ?? null);
   reset();
   const lvl = levels[levelOf(i)].scenarios;
-  ui.showScenario(s.title, s.choice?.question ?? "Wer darf zuerst? Tippe alle der Reihe nach an.", {
+  ui.showScenario(s.title, s.choice?.question ?? "Wer darf zuerst?\nTippe alle der Reihe nach an.", {
     i: lvl.indexOf(s),
     n: lvl.length,
   });
