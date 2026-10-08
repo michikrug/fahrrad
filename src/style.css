@@ -2,9 +2,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; font-family: system-ui, 
 /* touch-action none: otherwise iPad Safari scrolls/zooms instead of rotating the camera */
 #app { position: relative; width: 100%; height: 100%; touch-action: none; }
 canvas { display: block; }
-.labels { position: absolute; inset: 0; pointer-events: none; }
+/* z-index makes its own stacking context, so pin z-indices from CSS2DRenderer stay below the UI */
+.labels { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 .hidden { display: none !important; }
 
+.tag { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .pin { width: 44px; height: 44px; border-radius: 50%; display: none; place-items: center;
   background: #ffd400; border: 4px solid #fff; font: 800 24px system-ui; color: #222;
   box-shadow: 0 3px 8px #0006; }
@@ -26,3 +28,8 @@ canvas { display: block; }
 .result.ok { border-top-color: #2fa84f; }
 .result h2 { margin: 0 0 6px; font-size: 24px; }
 .result p { margin: 0; font-size: 19px; line-height: 1.4; }
+.btn.small { font-size: 17px; padding: 8px 16px; margin-top: 10px; box-shadow: none; background: #eef3f7; }
+.banner { position: absolute; top: 22%; left: 50%; transform: translate(-50%, -50%) rotate(-4deg);
+  font: 900 64px system-ui; color: #fff; background: #e8343a; padding: 10px 36px; border-radius: 22px;
+  box-shadow: 0 6px 20px #0006; animation: pop .35s ease-out; }
+@keyframes pop { from { transform: translate(-50%, -50%) scale(.3); } }

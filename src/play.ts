@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import type { Actor } from "./scene/actors";
 
 /**
  * Calls `cb` with the tapped actor id. A tap must be short and nearly still —
@@ -36,3 +37,62 @@ export function listenForTaps(
   dom.addEventListener("pointerup", end);
   dom.addEventListener("pointercancel", end);
 }
+
+export interface Run {
+  a: Actor;
+  start: number; // seconds after "Los"
+}
+
+/** Distance after which an actor's rear has left the junction square. */
+const clearDist = (a: Actor) => a.path.getCurveLengths()[1] + a.len / 2;
+
+/** Moment the last actor has left the junction. */
+export const clearTime = (runs: Run[]) => Math.max(...runs.map((r) => r.start + clearDist(r.a) / r.a.speed));
+
+/** Groups drive one after another; members of a group drive together. */
+export function schedule(groups: Actor[][], t0 = 0): { runs: Run[]; end: number } {
+  const runs: Run[] = [];
+  let t = t0;
+  for (const g of groups) {
+    let next = t;
+    for (const a of g) {
+      runs.push({ a, start: t });
+      next = Math.max(next, t + clearDist(a) / a.speed);
+    }
+    t = next;
+  }
+  return { runs, end: t };
+}
+
+/** Closest approach of two driving lines, as distance along each path — or null if they never meet. */
+function conflictPoint(a: Actor, b: Actor): [number, number] | null {
+  const N = 150;
+  const pa = a.path.getSpacedPoints(N);
+  const pb = b.path.getSpacedPoints(N);
+  let best = Infinity, ia = 0, ib = 0;
+  for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) {
+    const d = pa[i].distanceToSquared(pb[j]);
+    if (d < best) [best, ia, ib] = [d, i, j];
+  }
+  if (best > 1.5 ** 2) return null;
+  return [(ia / N) * a.path.getLength(), (ib / N) * b.path.getLength()];
+}
+
+/**
+ * Wrong order: everyone up to the mistake drives as tapped, then the wrongly early one
+ * and the one with priority set off timed to reach the crossing point together.
+ * Returns null when their lines don't cross — then we just play the tapped order.
+ */
+export function nearMissSchedule(byId: Map<string, Actor>, tapped: string[], index: number, expected: string): { runs: Run[]; pair: [Actor, Actor] } | null {
+  const x = byId.get(tapped[index])!;
+  const y = byId.get(expected)!;
+  const hit = conflictPoint(x, y);
+  if (!hit) return null;
+  const before = schedule(tapped.slice(0, index).map((id) => [byId.get(id)!]));
+  const tx = hit[0] / x.speed, ty = hit[1] / y.speed;
+  before.runs.push({ a: x, start: before.end + Math.max(0, ty - tx) }, { a: y, start: before.end + Math.max(0, tx - ty) });
+  return { runs: before.runs, pair: [x, y] };
+}
+
+/** Gap at which the watched pair freezes: close enough to scare, never touching. */
+export const nearMissDist = (x: Actor, y: Actor) => ((x.len + y.len) / 2) * 0.55 + 1.2;

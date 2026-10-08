@@ -8,6 +8,8 @@ export interface Actor {
   obj: THREE.Group;
   path: THREE.CurvePath<THREE.Vector3>;
   pin: HTMLDivElement;
+  len: number; // metres along the driving direction, for the near-miss check
+  speed: number; // m/s in the animation
 }
 
 const lambert = (color: number) => new THREE.MeshLambertMaterial({ color });
@@ -69,7 +71,10 @@ function bike(shirt: number, helmet: number) {
   return g;
 }
 
-const SIZE = { car: [1.8, 4.2], bus: [2.5, 11], bike: [0.6, 1.6], player: [0.6, 1.6] } as const;
+// [width, length] in metres; bikes include the 1.4× display scale.
+const SIZE = { car: [1.8, 4.2], bus: [2.5, 11], bike: [0.9, 2.2], player: [0.9, 2.2] } as const;
+// Slower than real life so kids can follow; bikes visibly slower than cars.
+const SPEED = { car: 7, bus: 5, bike: 4.5, player: 4.5 } as const;
 
 export function buildActor(p: Participant): Actor {
   const model =
@@ -88,22 +93,35 @@ export function buildActor(p: Participant): Actor {
   hit.userData.actorId = p.id;
   model.add(hit);
 
+  // Pin and "Du" share one stacked label so they never overlap at any zoom.
+  const tag = document.createElement("div");
+  tag.className = "tag";
   const pin = document.createElement("div");
   pin.className = "pin";
-  const label = new CSS2DObject(pin);
-  label.position.y = p.kind === "bus" ? 4.2 : 2.8;
-  model.add(label);
+  tag.appendChild(pin);
   if (p.kind === "player") {
     const you = document.createElement("div");
     you.className = "you";
     you.textContent = "Du";
-    const youLabel = new CSS2DObject(you);
-    youLabel.position.y = 2.1;
-    model.add(youLabel);
+    tag.appendChild(you);
   }
+  const label = new CSS2DObject(tag);
+  // Local units: bike models are scaled 1.4×, so their label sits lower in model space.
+  label.position.y = p.kind === "bus" ? 4.2 : isBike ? 1.9 : 2.6;
+  model.add(label);
 
   const path = lanePath(p.arm, p.move, isBike ? ROAD_HALF - 0.7 : ROAD_HALF / 2, ROAD_HALF + 1.5 + l / 2);
-  model.position.copy(path.getPointAt(0));
-  model.lookAt(path.getPointAt(0.01));
-  return { p, obj: model, path, pin };
+  const actor = { p, obj: model, path, pin, len: l, speed: SPEED[p.kind] };
+  placeAt(actor, 0);
+  return actor;
+}
+
+/** Put the actor `d` metres along its path, facing forward. */
+export function placeAt(a: Actor, d: number) {
+  const len = a.path.getLength();
+  const u = Math.min(d / len, 1);
+  a.obj.position.copy(a.path.getPointAt(u));
+  // Look a bit ahead; at the very end look along the last segment instead.
+  const ahead = a.path.getPointAt(Math.min(u + 0.5 / len, 1));
+  if (ahead.distanceToSquared(a.obj.position) > 1e-6) a.obj.lookAt(ahead);
 }
