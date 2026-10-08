@@ -264,7 +264,7 @@ function updateSounds() {
     toCamera.copy(a.obj.position).applyMatrix4(world.camera.matrixWorldInverse);
     // Full volume within 12 m (the bike view), fading with distance; bird's-eye view sits ~30 m up.
     const gain = Math.min(1, 12 / Math.max(toCamera.length(), 1));
-    v.set(gain * k, THREE.MathUtils.clamp(toCamera.x / (Math.abs(toCamera.z) + 2), -1, 1) * 0.8);
+    v.set(gain * k, THREE.MathUtils.clamp(toCamera.x / (Math.abs(toCamera.z) + 2), -1, 1) * 0.8, k === 1 ? 1 : 0);
   }
 }
 

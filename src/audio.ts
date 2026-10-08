@@ -97,8 +97,8 @@ function steps(c: AudioContext) {
 
 export type MoverKind = "car" | "bus" | "bike" | "pedestrian";
 export interface Voice {
-  /** `gain` 0..1 (distance), `pan` -1 (left) .. 1 (right). */
-  set(gain: number, pan: number): void;
+  /** `gain` 0..1 (distance), `pan` -1 (left) .. 1 (right), `rev` 0 (engine idling) .. 1 (driving). */
+  set(gain: number, pan: number, rev?: number): void;
   stop(): void;
 }
 
@@ -110,43 +110,68 @@ export function moverSound(kind: MoverKind): Voice {
   const pan = c.createStereoPanner();
   pan.connect(vol).connect(dest);
   const filter = c.createBiquadFilter();
-  filter.connect(pan);
   const sources: AudioScheduledSourceNode[] = [];
+  /** Slow volume pulse: cylinders firing (engine) or the wheel turning (bike). */
+  const pulse = (rate: number, depth: number) => {
+    const am = c.createGain();
+    am.gain.value = 1 - depth;
+    const lfo = c.createOscillator();
+    lfo.frequency.value = rate;
+    const amount = c.createGain();
+    amount.gain.value = depth;
+    lfo.connect(amount).connect(am.gain);
+    sources.push(lfo);
+    return { am, lfo };
+  };
+  let rev = (_r: number) => {};
   if (kind === "car" || kind === "bus") {
-    // Engine: two slightly detuned low saws, muffled — the beating gives the "rumble".
+    // Engine: two slightly detuned low saws, muffled and pulsing like firing cylinders.
+    // Idle runs lower and slower; setting off glides pitch, pulse and brightness up (the "rev").
     const f = kind === "bus" ? 38 : 55;
     filter.type = "lowpass";
-    filter.frequency.value = kind === "bus" ? 260 : 380;
     filter.Q.value = 2;
-    for (const k of [1, 1.03]) {
+    const { am, lfo } = pulse(0, 0.5);
+    filter.connect(am).connect(pan);
+    const oscs = [1, 1.03].map((k) => {
       const o = c.createOscillator();
       o.type = "sawtooth";
-      o.frequency.value = f * k;
       o.connect(filter);
       sources.push(o);
-    }
+      return { o, k };
+    });
+    rev = (r) => {
+      const t = c.currentTime, glide = 0.35;
+      for (const { o, k } of oscs) o.frequency.setTargetAtTime(f * k * (0.7 + 0.5 * r), t, glide);
+      lfo.frequency.setTargetAtTime(f * (0.35 + 0.25 * r), t, glide);
+      filter.frequency.setTargetAtTime((kind === "bus" ? 220 : 320) + 260 * r, t, glide);
+    };
   } else if (kind === "bike") {
-    // Tyres on asphalt: quiet band of noise.
-    filter.type = "bandpass";
-    filter.frequency.value = 900;
-    filter.Q.value = 0.8;
+    // Tyres rolling on asphalt: deep, soft noise with a slight wobble of the turning wheel.
+    filter.type = "lowpass";
+    filter.frequency.value = 320;
+    filter.connect(pulse(2.5, 0.3).am).connect(pan);
     const n = noise(c);
     n.connect(filter);
     sources.push(n);
   } else {
     filter.type = "lowpass";
     filter.frequency.value = 700;
-    const s = steps(c);
-    s.connect(filter);
-    sources.push(s);
+    filter.connect(pan);
+    const st = steps(c);
+    st.connect(filter);
+    sources.push(st);
   }
-  const level = { car: 0.35, bus: 0.5, bike: 0.25, pedestrian: 0.8 }[kind];
-  for (const s of sources) s.start();
+  let lastRev = 0;
+  rev(0);
+  // The engine pulse halves the average volume, hence the higher car/bus levels.
+  const level = { car: 0.6, bus: 0.8, bike: 0.6, pedestrian: 0.8 }[kind];
+  for (const src of sources) src.start();
   return {
-    set(g, p) {
+    set(g, p, r = 1) {
       // Smoothed, so moving cameras don't make it crackle.
       vol.gain.setTargetAtTime(g * level, c.currentTime, 0.05);
       pan.pan.setTargetAtTime(p, c.currentTime, 0.05);
+      if (r !== lastRev) rev((lastRev = r));
     },
     stop() {
       vol.gain.setTargetAtTime(0, c.currentTime, 0.05);
