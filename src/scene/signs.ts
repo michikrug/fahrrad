@@ -5,7 +5,7 @@ import { ARMS, DIR, rightOf } from "./roads";
 // StVO signs drawn on canvas textures — no image files, and shapes/colours stay editable here.
 // ponytail: pictograms are simplified look-alikes, not the official vector artwork.
 
-const RED = "#c1121c", BLUE = "#1d5fae", YELLOW = "#f7c600", WHITE = "#fff", BLACK = "#111", GREEN = "#1fa33a";
+const RED = "#c1121c", BLUE = "#1d5fae", YELLOW = "#f7c600", WHITE = "#fff", BLACK = "#111", GREEN = "#009650";
 const PX = 256; // canvas pixels per sign "unit" (the longer side)
 
 type Ctx = CanvasRenderingContext2D;
@@ -50,26 +50,30 @@ function warnTriangle(c: Ctx, W: number, down = false) {
   fill(c, WHITE);
 }
 
+/** The StVO bicycle pictogram: diamond frame, saddle on a post, handlebar on a raised stem. `s` ≈ half the wheelbase. */
 function bikeIcon(c: Ctx, x: number, y: number, s: number, color: string) {
   c.strokeStyle = color;
-  c.lineWidth = s * 0.09;
+  c.lineWidth = s * 0.08;
   c.lineCap = c.lineJoin = "round";
+  const p = (dx: number, dy: number) => [x + dx * s, y + dy * s] as const;
   for (const dx of [-0.55, 0.55]) {
     c.beginPath();
-    c.arc(x + dx * s, y + 0.25 * s, 0.32 * s, 0, Math.PI * 2);
+    c.arc(...p(dx, 0.25), 0.33 * s, 0, Math.PI * 2);
     c.stroke();
   }
-  c.beginPath();
-  c.moveTo(x - 0.55 * s, y + 0.25 * s); // rear hub
-  c.lineTo(x - 0.1 * s, y - 0.25 * s); // seat
-  c.lineTo(x + 0.35 * s, y - 0.25 * s);
-  c.lineTo(x + 0.55 * s, y + 0.25 * s); // front hub
-  c.moveTo(x - 0.55 * s, y + 0.25 * s);
-  c.lineTo(x, y + 0.25 * s); // crank
-  c.lineTo(x + 0.35 * s, y - 0.25 * s);
-  c.moveTo(x + 0.3 * s, y - 0.45 * s); // handlebar
-  c.lineTo(x + 0.35 * s, y - 0.25 * s);
-  c.stroke();
+  const line = (...pts: (readonly [number, number])[]) => {
+    c.beginPath();
+    c.moveTo(...pts[0]);
+    for (const q of pts.slice(1)) c.lineTo(...q);
+    c.stroke();
+  };
+  const rear = p(-0.55, 0.25), crank = p(-0.05, 0.25), seat = p(-0.2, -0.2), head = p(0.36, -0.2), front = p(0.55, 0.25);
+  line(rear, crank, seat, rear); // chain stay, seat tube, seat stay
+  line(seat, head, crank); // top tube, down tube
+  line(p(0.33, -0.32), front); // fork and head tube
+  line(seat, p(-0.23, -0.36)); // seat post
+  line(p(-0.36, -0.38), p(-0.1, -0.38)); // saddle
+  line(p(0.33, -0.32), p(0.3, -0.45), p(0.46, -0.45)); // stem and bar
 }
 
 function walkerIcon(c: Ctx, x: number, y: number, s: number, color: string) {
@@ -88,6 +92,25 @@ function walkerIcon(c: Ctx, x: number, y: number, s: number, color: string) {
   c.lineTo(x, y - 0.4 * s);
   c.lineTo(x + 0.3 * s, y - 0.15 * s); // arms
   c.stroke();
+}
+
+/**
+ * Z. 720: green arrow with a chevron head and a white outline on a black square.
+ * Drawn into the square (x, y, size) so 721 can show it small.
+ */
+function gruenpfeil(c: Ctx, x: number, y: number, size: number) {
+  c.fillStyle = BLACK;
+  c.fillRect(x, y, size, size);
+  const pts = [[0.1, 0.4], [0.5, 0.4], [0.33, 0.21], [0.47, 0.08], [0.88, 0.5], [0.47, 0.92], [0.33, 0.79], [0.5, 0.6], [0.1, 0.6]];
+  c.beginPath();
+  for (const [px, py] of pts) c.lineTo(x + px * size, y + py * size);
+  c.closePath();
+  c.lineJoin = "miter";
+  c.strokeStyle = WHITE;
+  c.lineWidth = size * 0.07; // half of it shows outside the green: the white edge
+  c.stroke();
+  c.fillStyle = GREEN;
+  c.fill();
 }
 
 function arrow(c: Ctx, x0: number, x1: number, y: number, t: number, color: string) {
@@ -201,13 +224,10 @@ const SIGNS: Record<SignId, SignDef> = {
     paint: (c, W) => {
       warnTriangle(c, W);
       c.fillStyle = BLACK;
-      c.fillRect(W * 0.3, W * 0.62, W * 0.4, W * 0.03); // thin side road
-      c.beginPath(); // thick priority road with pointed top
-      c.moveTo(W * 0.5, W * 0.36);
-      c.lineTo(W * 0.545, W * 0.44);
-      c.lineTo(W * 0.545, W * 0.86);
-      c.lineTo(W * 0.455, W * 0.86);
-      c.lineTo(W * 0.455, W * 0.44);
+      c.fillRect(W * 0.33, W * 0.6, W * 0.34, W * 0.06); // side road
+      c.beginPath(); // bold priority road: pointed top wider than the shaft, notched foot
+      for (const [x, y] of [[0.5, 0.34], [0.6, 0.47], [0.555, 0.47], [0.555, 0.86], [0.5, 0.81], [0.445, 0.86], [0.445, 0.47], [0.4, 0.47]])
+        c.lineTo(W * x, W * y);
       c.closePath();
       c.fill();
     },
@@ -232,37 +252,50 @@ const SIGNS: Record<SignId, SignDef> = {
     paint: (c, W) => {
       roundRect(c, 2, 2, W - 4, W - 4, 10);
       fill(c, BLUE);
-      poly(c, 3, W * 0.42, -90, W / 2, W * 0.58);
+      poly(c, 3, W * 0.45, -90, W / 2, W * 0.57);
       fill(c, WHITE);
+      // Zebra stripes in perspective under the walker: fanning out towards the viewer.
       c.fillStyle = BLACK;
-      for (let i = 0; i < 4; i++) c.fillRect(W * (0.3 + i * 0.11), W * 0.73, W * 0.06, W * 0.04);
-      walkerIcon(c, W / 2, W * 0.55, W * 0.17, BLACK);
+      for (let i = -2; i <= 2; i++) {
+        const top = W * (0.5 + i * 0.085), bot = W * (0.5 + i * 0.105);
+        c.beginPath();
+        c.moveTo(top - W * 0.025, W * 0.69);
+        c.lineTo(top + W * 0.025, W * 0.69);
+        c.lineTo(bot + W * 0.032, W * 0.775);
+        c.lineTo(bot - W * 0.032, W * 0.775);
+        c.closePath();
+        c.fill();
+      }
+      walkerIcon(c, W * 0.5, W * 0.48, W * 0.24, BLACK);
     },
   },
   // Grünpfeil
   "720": {
-    w: 0.5, h: 0.25,
-    shape: (c, W, H) => roundRect(c, 2, 2, W - 4, H - 4, 6),
-    paint: (c, W, H) => {
-      roundRect(c, 2, 2, W - 4, H - 4, 6);
-      fill(c, BLACK);
-      arrow(c, W * 0.15, W * 0.85, H / 2, H * 0.3, GREEN);
-    },
+    w: 0.4, h: 0.4,
+    shape: (c, W) => c.rect(0, 0, W, W),
+    paint: (c, W) => gruenpfeil(c, 0, 0, W),
   },
   // Grünpfeil nur für den Radverkehr
   "721": {
-    w: 0.5, h: 0.25,
-    shape: (c, W, H) => roundRect(c, 2, 2, W - 4, H - 4, 6),
+    w: 0.42, h: 0.56,
+    shape: (c, W, H) => roundRect(c, 2, 2, W - 4, H - 4, 10),
     paint: (c, W, H) => {
-      roundRect(c, 2, 2, W - 4, H - 4, 6);
+      roundRect(c, 2, 2, W - 4, H - 4, 10);
       fill(c, BLACK);
-      arrow(c, W * 0.45, W * 0.9, H / 2, H * 0.3, GREEN);
-      bikeIcon(c, W * 0.24, H * 0.47, H * 0.42, GREEN);
+      roundRect(c, W * 0.05, W * 0.05, W * 0.9, H - W * 0.1, 6);
+      fill(c, WHITE);
+      gruenpfeil(c, W * 0.27, H * 0.08, W * 0.46);
+      c.fillStyle = BLACK;
+      c.font = `700 ${H * 0.15}px Arial, sans-serif`;
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      c.fillText("nur", W / 2, H * 0.55);
+      bikeIcon(c, W / 2, H * 0.76, W * 0.27, BLACK);
     },
   },
   // Zusatzzeichen: course of the bending priority road, seen by traffic on this arm (arriving from the bottom)
   "1002": {
-    w: 0.6, h: 0.45,
+    w: 0.55, h: 0.55,
     shape: (c, W, H) => roundRect(c, 2, 2, W - 4, H - 4, 6),
     paint: (c, W, H, { layout, arm }) => {
       roundRect(c, 2, 2, W - 4, H - 4, 6);
@@ -270,49 +303,59 @@ const SIGNS: Record<SignId, SignDef> = {
       roundRect(c, 6, 6, W - 12, H - 12, 4);
       fill(c, WHITE);
       const viewRight = rightOf(DIR[arm].clone().negate());
-      const cx = W / 2, cy = H / 2, L = H * 0.36;
+      const cx = W / 2, cy = H / 2, L = H * 0.36, thick = H * 0.13;
+      // Canvas x = viewer's right, canvas y (down) = towards the viewer, i.e. along DIR[arm].
+      const end = (a: Arm, k = 1) => [cx + DIR[a].dot(viewRight) * L * k, cy + DIR[a].dot(DIR[arm]) * L * k] as const;
       c.strokeStyle = BLACK;
       c.lineCap = "butt";
+      const prio = (layout.priority ?? []).filter((a) => layout.arms[a]);
+      c.lineWidth = H * 0.05;
       for (const a of ARMS) {
-        if (!layout.arms[a]) continue;
-        // Canvas x = viewer's right, canvas y (down) = towards the viewer, i.e. along DIR[arm].
-        const dx = DIR[a].dot(viewRight), dy = DIR[a].dot(DIR[arm]);
-        c.lineWidth = layout.priority?.includes(a) ? H * 0.12 : H * 0.04;
-        c.beginPath();
-        c.moveTo(cx, cy);
-        c.lineTo(cx + dx * L * 1.3, cy + dy * L);
+        if (!layout.arms[a] || prio.includes(a)) continue;
+        c.beginPath(); // stops short of the priority road, like on the real sign
+        c.moveTo(...end(a));
+        c.lineTo(...end(a, (thick / 2 + H * 0.06) / L));
+        c.stroke();
+      }
+      if (prio.length === 2) {
+        c.lineWidth = thick;
+        c.beginPath(); // one stroke with a rounded bend (straight if the arms are opposite)
+        c.moveTo(...end(prio[0]));
+        c.arcTo(cx, cy, ...end(prio[1]), L * 0.45);
+        c.lineTo(...end(prio[1]));
         c.stroke();
       }
     },
   },
-  // Zusatzzeichen under Z. 220: bikes may ride against the one-way direction (number not confirmed in the legal text)
+  // Zusatzzeichen under Z. 220 (StVO Anlage 2 Nr. 9.1 "Radverkehr in Gegenrichtung"): bicycle over ⇄
   "1000-32": {
-    w: 0.6, h: 0.33, twoSided: true,
+    w: 0.6, h: 0.45, twoSided: true,
     shape: (c, W, H) => roundRect(c, 2, 2, W - 4, H - 4, 6),
     paint: (c, W, H) => {
       roundRect(c, 2, 2, W - 4, H - 4, 6);
       fill(c, BLACK);
       roundRect(c, 6, 6, W - 12, H - 12, 4);
       fill(c, WHITE);
-      bikeIcon(c, W * 0.28, H * 0.5, H * 0.4, BLACK);
-      arrow(c, W * 0.55, W * 0.9, H * 0.33, H * 0.1, BLACK);
-      arrow(c, W * 0.9, W * 0.55, H * 0.67, H * 0.1, BLACK);
+      bikeIcon(c, W / 2, H * 0.34, H * 0.3, BLACK);
+      arrow(c, W * 0.68, W * 0.32, H * 0.68, H * 0.05, BLACK);
+      arrow(c, W * 0.32, W * 0.68, H * 0.82, H * 0.05, BLACK);
     },
   },
   // Zusatzzeichen "Radverkehr frei"
   "1022-10": {
-    w: 0.6, h: 0.33,
+    w: 0.6, h: 0.45,
     shape: (c, W, H) => roundRect(c, 2, 2, W - 4, H - 4, 6),
     paint: (c, W, H) => {
       roundRect(c, 2, 2, W - 4, H - 4, 6);
       fill(c, BLACK);
       roundRect(c, 6, 6, W - 12, H - 12, 4);
       fill(c, WHITE);
-      bikeIcon(c, W * 0.3, H * 0.47, H * 0.42, BLACK);
+      bikeIcon(c, W / 2, H * 0.33, H * 0.3, BLACK);
       c.fillStyle = BLACK;
-      c.font = `700 ${H * 0.36}px Arial, sans-serif`;
+      c.font = `700 ${H * 0.28}px Arial, sans-serif`;
+      c.textAlign = "center";
       c.textBaseline = "middle";
-      c.fillText("frei", W * 0.55, H * 0.52);
+      c.fillText("frei", W / 2, H * 0.76);
     },
   },
 };
