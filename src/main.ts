@@ -4,7 +4,7 @@ import { createCameraRig } from "./camera";
 import { firstMistake, isCorrect } from "./check";
 import { rules, signInfo } from "./content/rules";
 import { levels, scenarios } from "./content/scenarios";
-import { isUnlocked, levelStats, loadFree, loadProgress, record, saveFree, saveProgress } from "./progress";
+import { UNLOCK_SHARE, isUnlocked, levelStats, loadFree, loadProgress, record, saveFree, saveProgress } from "./progress";
 import { signCanvas } from "./scene/signs";
 import { clearTime, isNearMiss, listenForTaps, nearMissSchedule, schedule, type Run } from "./play";
 import { buildActor, placeAt, updateSignal, type Actor } from "./scene/actors";
@@ -250,9 +250,23 @@ ui.onView(() => {
   ui.setView(rig.mode);
 });
 ui.onReset(reset);
+/**
+ * Summary at the end of a level. Judged by progress, not position: with the stepper or free choice
+ * a kid can reach the last task with others unsolved.
+ */
+function levelDone() {
+  const i = levelOf(index);
+  const { n, solved, stars } = levelStats(levels[i], progress);
+  const last = i === levels.length - 1;
+  ui.showLevelDone({
+    title: levels[i].title, n, stars, last,
+    missing: Math.max(0, Math.ceil(n * UNLOCK_SHARE) - solved),
+    next: !last && isUnlocked(levels, i + 1, progress) ? `${i + 2}. ${levels[i + 1].title}` : undefined,
+  }, showMap);
+}
+
 ui.onNext(() => {
-  // End of a level: back to the map, where the next level may have just unlocked.
-  if (index + 1 >= scenarios.length || levelOf(index + 1) !== levelOf(index)) return showMap();
+  if (index + 1 >= scenarios.length || levelOf(index + 1) !== levelOf(index)) return levelDone();
   load(++index);
 });
 ui.onMenu(() => showMap(true));
@@ -266,6 +280,20 @@ const jump = new URLSearchParams(location.search).get("s");
 index = Math.min(Number(jump) || 0, scenarios.length - 1);
 load(index);
 if (jump === null) showMap();
+
+// ?fps shows the frame rate — for checking smoothness on a real phone (also in the production build).
+if (new URLSearchParams(location.search).has("fps")) {
+  const meter = Object.assign(document.createElement("div"), { className: "fps" });
+  app.appendChild(meter);
+  let frames = 0, since = performance.now();
+  world.onFrame(() => {
+    frames++;
+    const now = performance.now();
+    if (now - since < 1000) return;
+    meter.textContent = `${Math.round((frames * 1000) / (now - since))} fps · ${world.renderer.info.render.calls} calls`;
+    (frames = 0), (since = now);
+  });
+}
 
 // Dev only: lets headless tests inspect state from the console.
 if (import.meta.env.DEV) Object.assign(window, { world, rig });

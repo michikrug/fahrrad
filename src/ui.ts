@@ -106,16 +106,19 @@ export function createUI(root: HTMLElement) {
   const modal = el("div", "modal hidden", root);
   const sheet = el("div", "sheet", modal);
   modal.addEventListener("click", (e) => e.target === modal && closeModal());
+  let afterClose = () => {};
   function closeModal() {
     stopSpeaking();
     modal.classList.add("hidden");
+    afterClose();
   }
-  function openModal(build: (into: HTMLElement) => void) {
+  function openModal(build: (into: HTMLElement) => void, close = { icon: "✓", text: "Schließen", then: () => {} }) {
     sheet.replaceChildren();
     build(sheet);
-    const close = el("button", "btn primary close", sheet);
-    setLabel(close, "✓", "Schließen");
-    close.addEventListener("click", closeModal);
+    afterClose = close.then;
+    const btn = el("button", "btn primary close", sheet);
+    setLabel(btn, close.icon, close.text);
+    btn.addEventListener("click", closeModal);
     modal.classList.remove("hidden");
     sheet.scrollTop = 0;
   }
@@ -208,6 +211,22 @@ export function createUI(root: HTMLElement) {
           el("p", "", t, e.text);
         }
       });
+    },
+
+    /**
+     * End of a level. `next` names the level that is now open; `missing` = tasks still needed
+     * for the unlock share (0 = level done). Closing leads to the map.
+     */
+    showLevelDone(o: { title: string; stars: number; n: number; missing: number; next?: string; last: boolean }, then: () => void) {
+      openModal((s) => {
+        const done = o.missing === 0;
+        el("h2", "level-done", s, done ? "🎉 Level geschafft!" : "Fast geschafft!");
+        el("div", "stars-big", s, `${"★".repeat(o.stars)}${"☆".repeat(o.n - o.stars)}`);
+        el("p", "", s, `„${o.title}“: ${o.stars} von ${o.n} Aufgaben ohne Fehler gelöst.`);
+        if (!done) el("p", "", s, `Löse noch ${o.missing} ${o.missing === 1 ? "Aufgabe" : "Aufgaben"}, dann ist das Level geschafft.`);
+        else if (o.last) el("p", "", s, "Du hast die Abschlussprüfung geschafft! 🏆");
+        else if (o.next) el("p", "", s, `Als Nächstes: ${o.next}`);
+      }, { icon: "➜", text: "Zur Übersicht", then });
     },
 
     setView(mode: "bird" | "ego") {

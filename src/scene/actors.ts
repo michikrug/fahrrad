@@ -212,6 +212,11 @@ function routeArrow(path: THREE.Curve<THREE.Vector3>, from: number, to: number, 
 
 let routeCount = 0;
 
+/** Body colour; also used for the route arrow and the chip. Explanations name it ("das rote Auto"). */
+export const colorOf = (p: Participant) =>
+  p.kind === "player" ? 0xff7a00 : p.kind === "bus" ? 0xf2c230 : p.kind === "pedestrian" ? (p.color ?? 0xe23d6e)
+  : p.kind === "bike" ? (p.color ?? 0x6a4fc4) : (p.color ?? 0x2f6fd6);
+
 export function buildActor(p: Participant, layout: Layout): Actor {
   const model =
     p.kind === "car" ? car(p.color ?? 0x2f6fd6)
@@ -263,9 +268,7 @@ export function buildActor(p: Participant, layout: Layout): Actor {
           // § 9 Abs. 1 StVO: left-turners "bis zur Mitte einordnen" — bikes wait just right of the centre line.
           isBike && p.move === "left" && !layout.roundabout ? 0.9 : undefined,
         );
-  const color =
-    p.kind === "player" ? 0xff7a00 : p.kind === "bus" ? 0xf2c230 : p.kind === "pedestrian" ? (p.color ?? 0xe23d6e)
-    : p.kind === "bike" ? (p.color ?? 0x6a4fc4) : (p.color ?? 0x2f6fd6);
+  const color = colorOf(p);
   // Start just ahead of the vehicle, end a few metres after the junction. Each arrow a hair higher
   // than the last so crossing arrows don't z-fight. Sits above sidewalk height for pedestrians.
   const y = (p.kind === "pedestrian" ? 0.17 : 0.04) + (routeCount++ % 10) * 0.004;

@@ -68,11 +68,11 @@ const L1: Scenario[] = [
     explain: "Auch an einer T-Kreuzung gilt ohne Schilder: Rechts vor links. Das lila Auto kommt von deiner rechten Seite, also darf es zuerst fahren.",
   },
   {
-    id: "t-2", rule: "rechts-vor-links", title: "T-Kreuzung von unten",
+    id: "t-2", rule: "rechts-vor-links", title: "T-Kreuzung: aus der Seitenstraße",
     layout: tee(),
     participants: [you("left"), car("car", "W", "straight", BLUE)],
     answer: [["you"], ["car"]],
-    explain: "Du kommst von unten und willst links abbiegen. Das blaue Auto kommt von links. Für das Auto kommst du von rechts – also muss es dich vorlassen. Rechts vor links gilt auch für die Straße, die auf die Querstraße trifft.",
+    explain: "Du kommst aus der Seitenstraße und willst links abbiegen. Das blaue Auto kommt von links. Für das Auto kommst du von rechts – also muss es dich vorlassen. Ohne Schilder muss die Seitenstraße nicht warten: Rechts vor links gilt auch hier.",
   },
 ];
 
@@ -110,7 +110,7 @@ const L2: Scenario[] = [
     layout: cross(),
     participants: [you("right"), walker("kid", "E", 1)],
     answer: [["kid"], ["you"]],
-    explain: "Du biegst rechts ab, und in der Straße geht ein Mädchen über die Fahrbahn. Wer abbiegt, nimmt besondere Rücksicht auf Fußgänger und wartet, wenn nötig.",
+    explain: "Du biegst rechts ab. In der Straße, in die du fährst, geht ein Mädchen hinüber. Wer abbiegt, nimmt besondere Rücksicht auf Fußgänger und wartet, wenn nötig.",
   },
   {
     id: "turn-sign", rule: "zeichen-geben", title: "Bevor du abbiegst", view: "ego",
@@ -184,7 +184,7 @@ const L4: Scenario[] = [
     layout: lights("green", "red", { S: { light: { car: "green", ped: "red", bike: "green" } } }),
     participants: [you(), car("car", "E", "straight", RED)],
     answer: [["you"], ["car"]],
-    explain: "Deine Ampel ist grün, die vom roten Auto ist rot. Grün heißt: Du darfst fahren. Rot heißt: Halt vor der Kreuzung!",
+    explain: "Deine Ampel ist grün. Die Ampel für das rote Auto ist rot. Grün heißt: Du darfst fahren. Rot heißt: Halt vor der Kreuzung!",
   },
   {
     id: "light-red", rule: "ampel", title: "Ampel rot",
@@ -315,7 +315,7 @@ const L7: Scenario[] = [
     layout: bend(["W", "N"]),
     participants: [you(), car("car", "W", "left", BLUE)],
     answer: [["car"], ["you"]],
-    explain: "Du hast das Dreieck „Vorfahrt gewähren“. Die Vorfahrtstraße kommt von links und knickt nach oben ab. Das blaue Auto folgt ihr und blinkt – es darf zuerst fahren.",
+    explain: "Du hast das Dreieck „Vorfahrt gewähren“. Die Vorfahrtstraße kommt von links und knickt in die Straße vor dir ab. Das blaue Auto folgt ihr und blinkt – es darf zuerst fahren.",
   },
   {
     id: "bend-walk", rule: "abknickend", title: "Abknicken und Fußgänger",
@@ -346,14 +346,14 @@ const L8: Scenario[] = [
     explain: "Wer schon im Kreisverkehr fährt, hat Vorfahrt. Das zeigen die beiden Schilder an der Einfahrt. Du wartest, bis das blaue Auto vorbei ist.",
   },
   {
-    id: "round-in", rule: "kreisverkehr", title: "Du bist schon im Kreisel",
+    id: "round-in", rule: "kreisverkehr", title: "Du bist schon im Kreisverkehr",
     layout: roundabout,
     participants: [you("straight", { arm: "W", inRing: true }), car("car", "S", "right", RED)],
     answer: [["you"], ["car"]],
     explain: "Diesmal fährst du schon im Kreisverkehr. Das rote Auto an der Einfahrt muss dich vorbeilassen.",
   },
   {
-    id: "round-enter", rule: "kreisverkehr", title: "Hinein in den Kreisel",
+    id: "round-enter", rule: "kreisverkehr", title: "Hinein in den Kreisverkehr",
     layout: roundabout,
     participants: [you("straight")],
     choice: {
@@ -364,7 +364,7 @@ const L8: Scenario[] = [
     explain: "Beim Hineinfahren in den Kreisverkehr gibst du kein Zeichen. Erst beim Hinausfahren zeigst du mit dem rechten Arm.",
   },
   {
-    id: "round-out", rule: "kreisverkehr", title: "Raus aus dem Kreisel",
+    id: "round-out", rule: "kreisverkehr", title: "Raus aus dem Kreisverkehr",
     layout: roundabout,
     participants: [you("straight")],
     choice: {

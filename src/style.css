@@ -93,6 +93,9 @@ canvas { display: block; }
 .sheet h2 { margin: 0 0 10px; font-size: 20px; }
 .sheet p { font-size: 16px; line-height: 1.45; margin: 6px 0; }
 .sheet .close { width: 100%; margin-top: 14px; }
+.level-done { text-align: center; }
+.stars-big { text-align: center; font-size: 40px; color: #f5b301; letter-spacing: 4px; animation: grow .5s ease-out; }
+@keyframes grow { from { transform: scale(.3); opacity: 0; } }
 .card-signs { display: flex; gap: 10px; flex-wrap: wrap; }
 .card-signs canvas, .sheet-row canvas { height: 64px; width: auto; flex: none; }
 .source { display: block; font-size: 13px; color: #2f6fd6; margin: 6px 0 4px; }
@@ -101,6 +104,9 @@ canvas { display: block; }
 .sheet-rule p { margin: 2px 0; font-size: 15px; }
 .sheet-row { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
 .sheet-row p { margin: 2px 0 0; font-size: 15px; }
+
+.fps { position: absolute; top: calc(4px + env(safe-area-inset-top)); right: 6px; z-index: 5; pointer-events: none;
+  background: #000a; color: #0f0; font: 12px ui-monospace, monospace; padding: 2px 6px; border-radius: 6px; }
 
 /* Tablet / desktop: a bit more air, dock centred instead of full width. */
 @media (min-width: 700px) {

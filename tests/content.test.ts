@@ -2,6 +2,15 @@ import { expect, test } from "bun:test";
 import { rules, signInfo } from "../src/content/rules";
 import { levels, scenarios } from "../src/content/scenarios";
 import { isCorrect } from "../src/check";
+import { colorOf } from "../src/scene/actors";
+
+// Colour words kids read in the explanations, per body colour. Keep in sync when adding a colour.
+const COLOR_WORDS: Record<number, string> = {
+  0xd63a3a: "rot", 0x2f6fd6: "blau", 0x2f9e5a: "grün", 0x8e44ad: "lila", 0x6a4fc4: "lila",
+  0x16a3a3: "türkis", 0xe23d6e: "pink", 0xf2c230: "gelb", 0xff7a00: "orange",
+};
+// Only colour + road user — "das rote Schild" or "der grüne Pfeil" are not about a participant.
+const NAMED = /\b(rot|blau|grün|lila|türkis|pink|gelb|orange)\w*\s+(Auto|Rad|Fahrrad|Bus)\b/g;
 
 test("scenario ids are unique", () => {
   expect(new Set(scenarios.map((s) => s.id)).size).toBe(scenarios.length);
@@ -22,6 +31,12 @@ for (const s of scenarios) {
       expect(s.choice.options.length).toBeGreaterThanOrEqual(2);
       expect(s.choice.options.length).toBeLessThanOrEqual(3); // big cards, no more than three
       expect(s.choice.options[s.choice.correct]).toBeDefined();
+    }
+    // "Das rote Auto" must exist: catches explanations left behind after a recolour.
+    for (const [, word, noun] of `${s.explain} ${s.choice?.question ?? ""}`.matchAll(NAMED)) {
+      const kinds = noun === "Auto" ? ["car"] : noun === "Bus" ? ["bus"] : ["bike"];
+      const match = s.participants.filter((p) => kinds.includes(p.kind) && COLOR_WORDS[colorOf(p)] === word);
+      expect(match.length, `${word} ${noun}`).toBeGreaterThan(0);
     }
     // Every participant comes from an arm that exists.
     for (const p of s.participants) expect(s.layout.arms[p.arm]).toBeDefined();
