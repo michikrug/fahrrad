@@ -7,6 +7,14 @@ explained in child-friendly German, with a source in the StVO.
 
 **Live:** https://fahrrad.michikrug.de (works offline once loaded, can be added to the home screen)
 
+<p>
+  <img src="docs/screenshots/menu.png" width="180" alt="Level overview with progress and stars">
+  <img src="docs/screenshots/order.png" width="180" alt="Tap the road users in the order they may go">
+  <img src="docs/screenshots/choice.png" width="180" alt="Choice question in the cyclist's own view at a green arrow">
+  <img src="docs/screenshots/roundabout.png" width="180" alt="Roundabout task from above">
+  <img src="docs/screenshots/signs.png" width="180" alt="Cheat sheet with traffic signs, each can be read aloud">
+</p>
+
 Built with Vite, TypeScript and three.js. All 3D models, traffic signs and sounds are generated in code; no asset files.
 
 ## Develop

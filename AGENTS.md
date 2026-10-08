@@ -73,6 +73,7 @@ Type checks and tests do not cover visuals. Look at the result:
 - Open `/?s=<id>`, click, and take screenshots.
 - Look at both "Von oben" and "Vom Rad" for scene changes.
 - Sounds can't be checked headless. Ask the owner to listen.
+- If a change visibly alters what the README screenshots show (`docs/screenshots/`, 390×844 at 2×), retake them the same way.
 
 ## Git
 
