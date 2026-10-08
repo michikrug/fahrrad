@@ -182,9 +182,13 @@ canvas { display: block; }
 .info-name strong { font: 800 16px var(--font); }
 .info-name p, .info-card > p { margin: 4px 0 0; font-size: 15px; line-height: 1.45; color: #34425c; }
 .info-card > p { margin-top: 10px; }
-/* No 3D bottom edge here: on a small circle it reads as an egg. */
-.speak { flex: none; width: 46px; height: 46px; border: none; border-radius: 50%; background: var(--blue); color: #fff;
-  font-size: 16px; padding: 0 0 0 3px; box-shadow: 0 2px 6px #2563d955; }
+/* Round read button, the same everywhere. No 3D bottom edge: on a small circle it reads as an egg.
+   ▶ and ■ are CSS shapes (a border triangle, a rounded square), so they look and centre the same on every device. */
+.speak { flex: none; width: 46px; height: 46px; border: none; border-radius: 50%; background: var(--blue); padding: 0;
+  display: grid; place-items: center; box-shadow: 0 2px 6px #2563d955; }
+.speak::before { content: ""; width: 0; height: 0; margin-left: 4px; /* optical centre of the triangle */
+  border-left: 15px solid #fff; border-top: 9px solid transparent; border-bottom: 9px solid transparent; }
+.speak.on::before { width: 14px; height: 14px; margin: 0; border: none; border-radius: 3px; background: #fff; }
 
 .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--card);
   border: none; border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 14px;

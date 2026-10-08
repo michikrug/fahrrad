@@ -34,7 +34,8 @@ function readToggle(b: HTMLElement, text: () => string, iconOnly = false) {
   const label = (on: boolean) => {
     reading = on;
     if (iconOnly) {
-      b.textContent = on ? "■" : "▶"; // the round blue read button, as in the Spickzettel
+      // ▶ / ■ are drawn in CSS: the glyphs differ per font and sat off-centre in the circle.
+      b.classList.toggle("on", on);
       b.ariaLabel = on ? "Stopp" : "Vorlesen";
     } else if (on) setLabel(b, "⏹", "Stopp");
     else setLabel(b, "🔊", "Vorlesen");
