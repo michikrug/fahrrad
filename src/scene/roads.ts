@@ -124,11 +124,46 @@ function armRect(arm: Arm, a: number, b: number, l0: number, l1: number) {
   return [Math.min(p1.x, p2.x), Math.max(p1.x, p2.x), Math.min(p1.z, p2.z), Math.max(p1.z, p2.z)] as const;
 }
 
-/** Flat ring sector lying on the ground (roundabout surfaces). */
-function ring(r0: number, r1: number, m: THREE.Material, y: number, start = 0, len = Math.PI * 2) {
-  const mesh = new THREE.Mesh(new THREE.RingGeometry(r0, r1, 64, 1, start, len), m);
+/** Flat disc lying on the ground (roundabout asphalt). */
+function ring(r0: number, r1: number, m: THREE.Material, y: number) {
+  const mesh = new THREE.Mesh(new THREE.RingGeometry(r0, r1, 64), m);
   mesh.rotation.x = -Math.PI / 2;
   mesh.position.y = y;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+/** Where the arm sidewalks of a roundabout start; the corner pieces fill everything inside. */
+const RING_WALK_END = 13;
+
+/**
+ * Raised sidewalk corner between arm direction `u` and the arm to its right `v`: it follows the ring's
+ * curb and both arms' road edges exactly and ends flush with the arm sidewalks, so nothing overlaps
+ * (coplanar tops would flicker) and no grass shows through.
+ */
+function ringCorner(u: THREE.Vector3, v: THREE.Vector3) {
+  const pts: [number, number][] = []; // (along u, along v)
+  const arc = (r: number, from: number, to: number) => {
+    for (let i = 0; i <= 16; i++) {
+      const t = from + ((to - from) * i) / 16;
+      pts.push([r * Math.cos(t), r * Math.sin(t)]);
+    }
+  };
+  const [inner, outer, end] = [ROAD_HALF, ROAD_HALF + WALK, RING_WALK_END];
+  const rOut = RING_OUT + WALK;
+  const a0 = Math.atan2(inner, Math.sqrt(RING_OUT ** 2 - inner ** 2)); // ring curb meets the road edge
+  const a1 = Math.atan2(outer, Math.sqrt(rOut ** 2 - outer ** 2)); // outer arc meets the sidewalk's back edge
+  pts.push([end, inner], [end, outer]);
+  arc(rOut, a1, Math.PI / 2 - a1);
+  pts.push([outer, end], [inner, end]);
+  arc(RING_OUT, Math.PI / 2 - a0, a0);
+  // Shape is drawn in x/-z so that rotating it flat makes the extrusion point up.
+  const shape = new THREE.Shape(pts.map(([a, b]) => {
+    const w = u.clone().multiplyScalar(a).addScaledVector(v, b);
+    return new THREE.Vector2(w.x, -w.z);
+  }));
+  const mesh = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: CURB, bevelEnabled: false }), mat.walk);
+  mesh.rotation.x = -Math.PI / 2;
   mesh.receiveShadow = true;
   return mesh;
 }
@@ -144,12 +179,8 @@ export function buildRoads(layout: Layout): THREE.Group {
     island.position.y = 0.15;
     island.receiveShadow = true;
     g.add(island);
-    // Ring sidewalk between the arms. RingGeometry angles run the other way round than our x/z atan2.
-    const gap = Math.atan2(ROAD_HALF + WALK, RING_OUT);
-    for (let i = 0; i < 4; i++) {
-      const a = (i * Math.PI) / 2 + gap;
-      g.add(ring(RING_OUT, RING_OUT + WALK, mat.walk, CURB, a, Math.PI / 2 - 2 * gap));
-    }
+    // Sidewalk round the ring, one corner piece between each pair of neighbouring arms (roundabouts have all four).
+    for (const arm of ARMS) g.add(ringCorner(DIR[arm], rightOf(DIR[arm])));
   } else {
     g.add(slab(-edge, edge, -edge, edge, 0.02, mat.asphalt));
   }
@@ -167,7 +198,7 @@ export function buildRoads(layout: Layout): THREE.Group {
     g.add(slab(...armRect(arm, start, ARM_LEN, -ROAD_HALF, ROAD_HALF), 0.02, mat.asphalt));
     // Sidewalks on both sides. N/S ones start at the road edge and so also fill the corner
     // squares; E/W start past them to avoid coplanar z-fighting.
-    const walkStart = layout.roundabout ? RING_OUT + 1 : isNS(arm) ? ROAD_HALF : ROAD_HALF + WALK;
+    const walkStart = layout.roundabout ? RING_WALK_END : isNS(arm) ? ROAD_HALF : ROAD_HALF + WALK;
     g.add(slab(...armRect(arm, walkStart, ARM_LEN, ROAD_HALF, ROAD_HALF + WALK), CURB, mat.walk));
     g.add(slab(...armRect(arm, walkStart, ARM_LEN, -ROAD_HALF - WALK, -ROAD_HALF), CURB, mat.walk));
 
