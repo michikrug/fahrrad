@@ -17,6 +17,11 @@ interface SignDef {
   paint: (c: Ctx, W: number, H: number, info: Info) => void;
   /** Printed on both faces (like real one-way signs); the back gets `flip` so arrows keep their world direction. */
   twoSided?: boolean;
+  /**
+   * White rim with a thin dark edge, as on most real signs: the artwork is drawn scaled by `k`
+   * about (W/2, cy·H) inside the shape. For triangles cy is their centre, so the rim stays even.
+   */
+  rim?: { k: number; cy?: number };
 }
 
 /** Regular polygon path around the canvas centre; `rot` in degrees, 0 = first vertex pointing right. */
@@ -131,28 +136,26 @@ function arrow(c: Ctx, x0: number, x1: number, y: number, t: number, color: stri
 const SIGNS: Record<SignId, SignDef> = {
   // Kreuzung oder Einmündung mit Vorfahrt von rechts
   "102": {
-    w: 0.9, h: 0.9,
+    w: 0.9, h: 0.9, rim: { k: 0.92, cy: 0.62 },
     shape: (c, W) => triUp(c, W),
     paint: (c, W) => {
       warnTriangle(c, W);
       c.strokeStyle = BLACK;
-      c.lineWidth = W * 0.07;
-      c.beginPath();
-      c.moveTo(W * 0.36, W * 0.5); c.lineTo(W * 0.64, W * 0.8);
-      c.moveTo(W * 0.64, W * 0.5); c.lineTo(W * 0.36, W * 0.8);
+      c.lineWidth = W * 0.06;
+      c.beginPath(); // X around the triangle's centre, about a fifth of its width
+      c.moveTo(W * 0.4, W * 0.52); c.lineTo(W * 0.6, W * 0.74);
+      c.moveTo(W * 0.6, W * 0.52); c.lineTo(W * 0.4, W * 0.74);
       c.stroke();
     },
   },
   // Vorfahrt gewähren
-  "205": { w: 0.9, h: 0.9, shape: (c, W) => triDown(c, W), paint: (c, W) => warnTriangle(c, W, true) },
+  "205": { w: 0.9, h: 0.9, rim: { k: 0.92, cy: 0.38 }, shape: (c, W) => triDown(c, W), paint: (c, W) => warnTriangle(c, W, true) },
   // Halt. Vorfahrt gewähren
   "206": {
-    w: 0.75, h: 0.75,
+    w: 0.75, h: 0.75, rim: { k: 0.93 },
     shape: (c, W) => poly(c, 8, W * 0.49, 22.5, W / 2, W / 2),
     paint: (c, W) => {
       poly(c, 8, W * 0.49, 22.5, W / 2, W / 2);
-      fill(c, WHITE);
-      poly(c, 8, W * 0.45, 22.5, W / 2, W / 2);
       fill(c, RED);
       c.fillStyle = WHITE;
       c.font = `900 ${W * 0.26}px Arial, sans-serif`;
@@ -163,7 +166,7 @@ const SIGNS: Record<SignId, SignDef> = {
   },
   // Kreisverkehr: three white arrows going round anticlockwise
   "215": {
-    w: 0.7, h: 0.7,
+    w: 0.7, h: 0.7, rim: { k: 0.94 },
     shape: (c, W) => circle(c, W / 2, W / 2, W * 0.49),
     paint: (c, W) => {
       circle(c, W / 2, W / 2, W * 0.49);
@@ -226,7 +229,7 @@ const SIGNS: Record<SignId, SignDef> = {
   },
   // Verbot der Einfahrt
   "267": {
-    w: 0.7, h: 0.7,
+    w: 0.7, h: 0.7, rim: { k: 0.94 },
     shape: (c, W) => circle(c, W / 2, W / 2, W * 0.49),
     paint: (c, W) => {
       circle(c, W / 2, W / 2, W * 0.49);
@@ -237,7 +240,7 @@ const SIGNS: Record<SignId, SignDef> = {
   },
   // Vorfahrt (an der nächsten Kreuzung)
   "301": {
-    w: 0.9, h: 0.9,
+    w: 0.9, h: 0.9, rim: { k: 0.92, cy: 0.62 },
     shape: (c, W) => triUp(c, W),
     paint: (c, W) => {
       warnTriangle(c, W);
@@ -265,7 +268,7 @@ const SIGNS: Record<SignId, SignDef> = {
   },
   // Fußgängerüberweg (sign Z. 350; the road marking itself is Z. 293)
   "350": {
-    w: 0.7, h: 0.7,
+    w: 0.7, h: 0.7, rim: { k: 0.94 },
     shape: (c, W) => roundRect(c, 2, 2, W - 4, W - 4, 10),
     paint: (c, W) => {
       roundRect(c, 2, 2, W - 4, W - 4, 10);
@@ -390,7 +393,21 @@ export function signCanvas(id: SignId, info: Info, back = false): HTMLCanvasElem
   else if (back) {
     def.shape(c, canvas.width, canvas.height);
     fill(c, "#8a8f94");
-  } else def.paint(c, canvas.width, canvas.height, info);
+  } else {
+    const W = canvas.width, H = canvas.height;
+    if (def.rim) {
+      def.shape(c, W, H);
+      fill(c, WHITE);
+      c.strokeStyle = "#777";
+      c.lineWidth = W * 0.008;
+      c.stroke();
+      const cy = H * (def.rim.cy ?? 0.5);
+      c.translate(W / 2, cy);
+      c.scale(def.rim.k, def.rim.k);
+      c.translate(-W / 2, -cy);
+    }
+    def.paint(c, W, H, info);
+  }
   return canvas;
 }
 
