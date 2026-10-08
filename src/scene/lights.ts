@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { Arm, ArmSpec, Layout, Phase } from "../types";
-import { DIR, ROAD_HALF, WALK, crossingBand, rightOf, stopLine } from "./roads";
+import { DIR, ROAD_HALF, crossingBand, rightOf, stopLine } from "./roads";
 import { signPost } from "./signs";
 
 type Lamp = "red" | "yellow" | "green";
@@ -151,21 +151,30 @@ export function buildLight(layout: Layout, arm: Arm): { group: THREE.Group; cont
   }
   group.add(pole);
 
-  // Pedestrian heads on both curbs, facing across the road (walkers look at the opposite side).
+  // Pedestrian heads at the curb on both ends of the crossing, facing across (walkers look at the
+  // opposite side), each to the right of the crossing as seen by the people waiting for it. The one
+  // behind the crossing hangs on the car signal pole, as is common, instead of a second post beside it —
+  // unless a bike signal already takes that height there.
   const peds: ReturnType<typeof signalHead>[] = [];
   if (spec.ped) {
     const [a, b] = crossingBand(layout);
     for (const side of [1, -1]) {
       const head = signalHead(["red", "green"], 0.15, "walk");
       const across = rightOf(DIR[arm]).multiplyScalar(side);
-      const p = DIR[arm].clone().multiplyScalar(side > 0 ? a - 0.3 : b + 0.3).addScaledVector(across, ROAD_HALF + WALK - 0.4);
+      const onPole = side < 0 && !spec.bike; // the car pole stands on this side, right behind the crossing
+      const p = onPole ? pos.clone() : DIR[arm].clone().multiplyScalar(side > 0 ? a - 0.3 : b + 0.3).addScaledVector(across, ROAD_HALF + 0.4);
       const post = new THREE.Group();
       post.position.copy(p);
       post.rotation.y = Math.atan2(-across.x, -across.z);
-      const s = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.6, 8), poleMat);
-      s.position.y = 1.3;
-      head.g.position.set(0, 2.4, 0.1);
-      post.add(s, head.g);
+      if (!onPole) {
+        const s = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.6, 8), poleMat);
+        s.position.y = 1.3;
+        s.castShadow = true;
+        post.add(s);
+      }
+      // Below the car head (bottom at 2.8 m); on the pole it sits on the pole's road-facing side.
+      head.g.position.set(0, 2.4, onPole ? 0.14 : 0.1);
+      post.add(head.g);
       group.add(post);
       peds.push(head);
     }
