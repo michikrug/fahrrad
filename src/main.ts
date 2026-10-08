@@ -34,7 +34,7 @@ function load(i: number) {
   const s = scenarios[i];
   ({ group: level, lights } = buildLevel(s.layout));
   actors = s.participants.map((p) => buildActor(p, s.layout));
-  for (const a of actors) level.add(a.obj);
+  for (const a of actors) level.add(a.obj, a.route);
   world.scene.add(level);
   world.resetCamera(s.layout.roundabout);
   reset();
@@ -50,7 +50,7 @@ function reset() {
     if (spec.ped) l.ped(spec.ped);
   }
   tapped = [];
-  for (const a of actors) placeAt(a, 0);
+  for (const a of actors) placeAt(a, 0), (a.route.visible = true);
   renderPins();
   ui.hideResult();
 }
@@ -107,7 +107,11 @@ world.onFrame((dt) => {
   if (!sim) return;
   sim.t += dt;
   for (const r of sim.runs) {
-    if (!r.started && sim.t >= r.start) (r.started = true), switchLightsFor(r.a);
+    if (!r.started && sim.t >= r.start) {
+      r.started = true;
+      r.a.route.visible = false;
+      switchLightsFor(r.a);
+    }
     placeAt(r.a, Math.max(0, sim.t - r.start) * r.a.speed);
   }
   const [x, y] = sim.pair ?? [];

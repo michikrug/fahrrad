@@ -9,6 +9,8 @@ export interface Actor {
   path: THREE.Curve<THREE.Vector3>;
   clear: number; // distance along the path after which the junction is left
   pin: HTMLDivElement;
+  /** Arrow on the ground showing where this one wants to go. Hidden once it sets off. */
+  route: THREE.Mesh;
   len: number; // metres along the driving direction, for the near-miss check
   speed: number; // m/s in the animation
 }
@@ -89,6 +91,40 @@ function walker(shirt: number) {
   return g;
 }
 
+/**
+ * Flat ribbon with an arrow head along the first part of a path — through the junction and a bit beyond.
+ * Lets kids read intent (straight/left/right) the way they would read a blinker or hand signal.
+ */
+function routeArrow(path: THREE.Curve<THREE.Vector3>, from: number, to: number, color: number, y: number) {
+  const W = 0.35, HEAD = 1.2, N = 40;
+  const total = path.getLength();
+  const at = (d: number) => {
+    const u = Math.min(d / total, 1);
+    const t = path.getTangentAt(u);
+    return { p: path.getPointAt(u), side: new THREE.Vector3(-t.z, 0, t.x).normalize(), t };
+  };
+  const pos: number[] = [];
+  const idx: number[] = [];
+  const shaftEnd = to - HEAD;
+  for (let i = 0; i <= N; i++) {
+    const { p, side } = at(from + ((shaftEnd - from) * i) / N);
+    pos.push(p.x + side.x * W, y, p.z + side.z * W, p.x - side.x * W, y, p.z - side.z * W);
+    if (i) idx.push(2 * i - 2, 2 * i - 1, 2 * i, 2 * i - 1, 2 * i + 1, 2 * i);
+  }
+  const { p, side } = at(shaftEnd);
+  const tip = at(to).p;
+  const base = pos.length / 3;
+  pos.push(p.x + side.x * W * 3, y, p.z + side.z * W * 3, p.x - side.x * W * 3, y, p.z - side.z * W * 3, tip.x, y, tip.z);
+  idx.push(base, base + 1, base + 2);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  const m = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.75, depthWrite: false, side: THREE.DoubleSide });
+  return new THREE.Mesh(geo, m);
+}
+
+let routeCount = 0;
+
 export function buildActor(p: Participant, layout: Layout): Actor {
   const model =
     p.kind === "car" ? car(p.color ?? 0x2f6fd6)
@@ -128,7 +164,14 @@ export function buildActor(p: Participant, layout: Layout): Actor {
     p.kind === "pedestrian"
       ? crossPath(layout, p.arm, p.side ?? 1)
       : lanePath(layout, p.arm, p.move ?? "straight", isBike ? ROAD_HALF - 0.7 : ROAD_HALF / 2, l, p.inRing);
-  const actor = { p, obj: model, path, clear, pin, len: l, speed: SPEED[p.kind] };
+  const color =
+    p.kind === "player" ? 0xff7a00 : p.kind === "bus" ? 0xf2c230 : p.kind === "pedestrian" ? (p.color ?? 0xe23d6e)
+    : p.kind === "bike" ? (p.color ?? 0x6a4fc4) : (p.color ?? 0x2f6fd6);
+  // Start just ahead of the vehicle, end a few metres after the junction. Each arrow a hair higher
+  // than the last so crossing arrows don't z-fight. Sits above sidewalk height for pedestrians.
+  const y = (p.kind === "pedestrian" ? 0.17 : 0.04) + (routeCount++ % 10) * 0.004;
+  const route = routeArrow(path, p.kind === "pedestrian" ? 0.4 : l / 2 + 0.3, Math.min(clear + 4, path.getLength()), color, y);
+  const actor = { p, obj: model, path, clear, route, pin, len: l, speed: SPEED[p.kind] };
   placeAt(actor, 0);
   return actor;
 }

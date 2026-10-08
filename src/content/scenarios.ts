@@ -3,6 +3,7 @@ import type { Scenario } from "../types";
 const cross = { arms: { N: {}, E: {}, S: {}, W: {} } };
 
 // Answers are written by hand like a teacher would. tests/content.test.ts checks consistency.
+// Orange is reserved for the player (bike + route arrow) — do not give other participants orange colours.
 export const scenarios: Scenario[] = [
   {
     id: "rvl-1",
@@ -146,10 +147,10 @@ export const scenarios: Scenario[] = [
     },
     participants: [
       { id: "you", kind: "player", arm: "S", move: "right" },
-      { id: "car", kind: "car", arm: "W", move: "straight", inRing: true, color: 0xf39c12 },
+      { id: "car", kind: "car", arm: "W", move: "straight", inRing: true, color: 0x2f6fd6 },
     ],
     answer: [["car"], ["you"]],
     explain:
-      "Wer schon im Kreisverkehr fährt, hat Vorfahrt. Das zeigen die beiden Schilder an der Einfahrt. Du wartest, bis das orange Auto vorbei ist.",
+      "Wer schon im Kreisverkehr fährt, hat Vorfahrt. Das zeigen die beiden Schilder an der Einfahrt. Du wartest, bis das blaue Auto vorbei ist.",
   },
 ];
