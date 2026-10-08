@@ -1,4 +1,4 @@
-import { speak } from "./audio";
+import { speak, stopSpeaking } from "./audio";
 
 // Plain DOM overlay. Big buttons and short sentences — the readers are 8–10 years old.
 
@@ -22,13 +22,24 @@ export function createUI(root: HTMLElement) {
   const result = el("div", "result hidden", root);
   const resultHead = el("h2", "", result);
   const resultText = el("p", "", result);
-  const read = el("button", "btn small", result, "🔊 Vorlesen");
-  read.addEventListener("click", () => speak(`${resultHead.textContent} ${resultText.textContent}`));
+  const read = el("button", "btn small", result);
+  const readLabel = (on: boolean) => (read.textContent = on ? "⏹ Stopp" : "🔊 Vorlesen");
+  readLabel(false);
+  read.addEventListener("click", () => {
+    if (read.textContent!.includes("Stopp")) {
+      stopSpeaking();
+      return readLabel(false);
+    }
+    readLabel(true);
+    speak(`${resultHead.textContent} ${resultText.textContent}`, () => readLabel(false));
+  });
 
   const banner = el("div", "banner hidden", root, "Achtung!");
 
   return {
     showScenario(t: string, taskText: string) {
+      stopSpeaking();
+      readLabel(false);
       title.textContent = t;
       task.textContent = taskText;
       result.classList.add("hidden");
@@ -43,6 +54,8 @@ export function createUI(root: HTMLElement) {
       next.classList.toggle("hidden", !ok);
     },
     hideResult() {
+      stopSpeaking();
+      readLabel(false);
       result.classList.add("hidden");
       banner.classList.add("hidden");
     },
