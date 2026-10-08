@@ -34,7 +34,7 @@ function readToggle(b: HTMLElement, text: () => string, iconOnly = false) {
   const label = (on: boolean) => {
     reading = on;
     if (iconOnly) {
-      b.textContent = on ? "⏹" : "🔊";
+      b.textContent = on ? "■" : "▶"; // the round blue read button, as in the Spickzettel
       b.ariaLabel = on ? "Stopp" : "Vorlesen";
     } else if (on) setLabel(b, "⏹", "Stopp");
     else setLabel(b, "🔊", "Vorlesen");
@@ -135,7 +135,7 @@ export function createUI(root: HTMLElement) {
   const resultHead = el("h2", "", result);
   const resultText = el("p", "", result);
   const resultBtns = el("div", "fb-pills", result);
-  const read = el("button", "pill-btn", resultBtns);
+  const read = el("button", "speak", resultBtns);
   const ruleBtn = el("button", "pill-btn", resultBtns);
   const fbActions = el("div", "fb-actions", result);
   const again = el("button", "", fbActions);
@@ -146,7 +146,7 @@ export function createUI(root: HTMLElement) {
   const taskSheet = el("div", "task-sheet", dock);
   const taskRow = el("div", "task-row", taskSheet);
   const task = el("p", "task-q", taskRow);
-  const taskRead = el("button", "read-round", taskRow);
+  const taskRead = el("button", "speak", taskRow);
   const bar = el("div", "bar", taskSheet);
   const reset = el("button", "soft-btn", bar);
   // View switch as a two-way toggle; the highlighted side is the view you are in.
@@ -157,7 +157,7 @@ export function createUI(root: HTMLElement) {
   setLabel(reset, "↺", "Nochmal");
 
   const resetTaskRead = readToggle(taskRead, () => `${title.textContent}. ${task.textContent}`, true);
-  const resetRead = readToggle(read, () => `${resultHead.textContent} ${resultText.textContent}`);
+  const resetRead = readToggle(read, () => `${resultHead.textContent} ${resultText.textContent}`, true);
 
   const chipEls = new Map<string, HTMLButtonElement>();
 
@@ -349,7 +349,7 @@ export function createUI(root: HTMLElement) {
         }
         el("p", "", s, card.text);
         sourceLink(s, card, "Quelle: ");
-        readToggle(el("button", "pill-btn", el("div", "fb-pills", s)), () => `${card.title}. ${card.text}`);
+        readToggle(el("button", "speak", el("div", "fb-pills", s)), () => `${card.title}. ${card.text}`, true);
       }, { icon: "", text: "Zurück", then: () => {}, primary: true }, "rule");
     },
 

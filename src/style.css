@@ -69,10 +69,8 @@ canvas { display: block; }
 /* The question is something to read, the buttons below are actions: a divider keeps them apart. */
 .task-row { display: flex; align-items: center; gap: 6px; margin: 0 0 12px; padding-bottom: 12px; border-bottom: 2px solid var(--line); }
 .task-q { flex: 1; margin: 0; font: 800 clamp(15px, 4.3vw, 17px)/1.3 var(--font); text-align: center; white-space: pre-line; } /* keeps the break after "Wer darf zuerst?" */
-/* Round grey 🔊/⏹ next to the question; balanced by padding on the other side so the text stays centred. */
-.read-round { flex: none; width: 44px; height: 44px; border: none; border-radius: 50%; background: var(--soft);
-  font-size: 18px; line-height: 1; padding: 0; display: grid; place-items: center; }
-.task-row::before { content: ""; flex: none; width: 44px; }
+/* Round ▶/■ read button next to the question; a spacer on the other side keeps the text centred. */
+.task-row::before { content: ""; flex: none; width: 46px; }
 .bar { display: flex; gap: 8px; }
 .soft-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: none;
   border-radius: 16px; background: var(--soft); min-height: 48px; font: 800 16px var(--font); color: var(--ink); }
@@ -92,7 +90,7 @@ canvas { display: block; }
 .fb-sheet h2 { margin: 0 0 6px; font: 900 24px var(--font); }
 /* Only the text scrolls: the badge sticks out of the sheet and the buttons must stay on screen. */
 .fb-sheet p { margin: 0 auto 12px; max-width: 34em; max-height: 30vh; overflow: auto; font-size: 16px; line-height: 1.45; color: #34425c; }
-.fb-pills { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+.fb-pills { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
 /* Secondary actions (Vorlesen, Regel ansehen): grey like Nochmal; fixed height so Vorlesen/Stopp doesn't jump. */
 .pill-btn { display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: 16px; background: var(--soft);
   color: var(--ink); font: 800 16px var(--font); padding: 0 18px; height: 48px; min-width: 140px; justify-content: center; }
