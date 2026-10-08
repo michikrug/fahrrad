@@ -12,6 +12,14 @@ const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, parent: 
   return e;
 };
 
+/** Progress bar; `color` defaults to the level colour (--lc). */
+function progressBar(parent: HTMLElement, share: number, color?: string) {
+  const b = el("span", "bar-track", parent);
+  const fill = el("span", "bar-fill", b);
+  fill.style.width = `${Math.round(share * 100)}%`;
+  if (color) fill.style.background = color;
+}
+
 /**
  * Button content as separate icon + text spans, so flexbox can centre the emoji vertically —
  * emoji glyphs sit on the text baseline with different metrics and look misaligned otherwise.
@@ -57,7 +65,28 @@ export interface MapLevel {
   stars: number;
   n: number;
   locked: boolean;
+  done: boolean; // enough solved to open the next level
+  next: boolean; // the level to play now
+  hint?: string; // what is missing, on the first locked level only
 }
+
+// One colour per level for its icon tile and progress bar, in map order.
+const LEVEL_COLORS = ["#2f6fd6", "#ff7a00", "#e23d6e", "#2fa84f", "#555e6b", "#1f8fb3", "#7a4fc4", "#d9534f", "#e0a800"];
+
+/** Emoji-only read-aloud button; speak() itself stops whatever was being read. */
+function speakBtn(parent: HTMLElement, text: () => string) {
+  const b = el("button", "speak", parent, "🔊");
+  b.setAttribute("aria-label", "Vorlesen");
+  b.addEventListener("click", () => speak(text(), () => {}));
+  return b;
+}
+
+const sourceLink = (parent: HTMLElement, card: RuleCard, prefix = "") => {
+  const a = el("a", "source", parent, `${prefix}${card.source} ↗`);
+  a.href = card.url;
+  a.target = "_blank";
+  a.rel = "noopener";
+};
 
 export interface SheetEntry {
   canvas: HTMLCanvasElement;
@@ -144,28 +173,45 @@ export function createUI(root: HTMLElement) {
     }) {
       map.replaceChildren();
       const head = el("div", "map-head", map);
-      el("h1", "", head, "🚲 Fahrrad-Führerschein");
-      const cheat = el("button", "btn", head);
-      setLabel(cheat, "📖", "Spickzettel");
+      const top = el("div", "map-title", head);
+      el("h1", "", top, "🚲 Fahrrad-Führerschein");
+      const cheat = el("button", "cheat", top);
+      el("span", "cheat-ico", cheat, "📖");
+      el("span", "", cheat, "Spickzettel");
       cheat.addEventListener("click", o.openSheet);
+      const solved = levels.reduce((n, l) => n + l.solved, 0), total = levels.reduce((n, l) => n + l.n, 0);
+      progressBar(head, solved / total, "#2fa84f");
+      el("div", "map-total", head, `${solved} von ${total} Aufgaben geschafft`);
+
       const list = el("div", "levels", map);
       levels.forEach((l, i) => {
-        const b = el("button", `level${l.locked ? " locked" : ""}`, list);
+        const b = el("button", `level${l.locked ? " locked" : ""}${l.next ? " next" : ""}`, list);
+        b.style.setProperty("--lc", LEVEL_COLORS[i % LEVEL_COLORS.length]);
         el("span", "level-icon", b, l.locked ? "🔒" : l.icon);
         const info = el("span", "level-info", b);
         el("strong", "", info, `${i + 1}. ${l.title}`);
-        el("span", "level-sub", info, l.locked
-          ? "Schaffe erst das Level davor."
-          : `${"★".repeat(l.stars)}${"☆".repeat(l.n - l.stars)}  ${l.solved}/${l.n} geschafft`);
+        if (!l.locked) {
+          const sub = el("span", "level-sub", info);
+          el("span", "level-stars", sub, `${"★".repeat(l.stars)}${"☆".repeat(l.n - l.stars)}`);
+          progressBar(sub, l.solved / l.n);
+          el("span", "", sub, `${l.solved}/${l.n}`);
+        } else if (l.hint) el("span", "level-hint", info, l.hint);
+        if (l.done) el("span", "level-badge done", b, "✓");
+        else if (l.next) el("span", "level-badge", b, "Los ▸");
         if (!l.locked) b.addEventListener("click", () => o.pick(i));
       });
+
+      const settings = el("div", "settings", map);
+      el("h3", "", settings, "Einstellungen");
       const option = (text: string, on: boolean, set: (on: boolean) => void) => {
-        const label = el("label", "option", map);
-        const box = el("input", "", label);
+        const label = el("label", "option", settings);
+        el("span", "", label, text);
+        // A real checkbox, styled as a switch: keyboard, screen readers and labels keep working.
+        const box = el("input", "switch", label);
         box.type = "checkbox";
+        box.setAttribute("role", "switch");
         box.checked = on;
         box.addEventListener("change", () => set(box.checked));
-        el("span", "", label, text);
       };
       option("🔓 Alle Level frei wählen", o.free, o.setFree);
       option("🔈 Geräusche", o.sound, o.setSound);
@@ -191,44 +237,52 @@ export function createUI(root: HTMLElement) {
           for (const c of signs) row.appendChild(c);
         }
         el("p", "", s, card.text);
-        const src = el("a", "source", s, `Quelle: ${card.source}`);
-        src.href = card.url;
-        src.target = "_blank";
-        src.rel = "noopener";
+        sourceLink(s, card, "Quelle: ");
         readToggle(el("button", "btn small", s), () => `${card.title}. ${card.text}`);
       });
     },
 
-    /** Spickzettel: all rules (with source) first, then every sign. */
-    showSheet(cards: RuleCard[], entries: SheetEntry[]) {
+    /** Spickzettel: all rules (with source) first, then every sign. Header with ✕ and jump tabs stays on top. */
+    showSheet(cards: { card: RuleCard; signs: HTMLCanvasElement[] }[], entries: SheetEntry[]) {
       openModal((s) => {
-        el("h2", "", s, "📖 Spickzettel");
-        el("h3", "", s, "Regeln");
-        for (const c of cards) {
-          const row = el("div", "sheet-rule", s);
-          el("strong", "", row, c.title);
-          el("p", "", row, c.text);
-          const src = el("a", "source", row, `Quelle: ${c.source}`);
-          src.href = c.url;
-          src.target = "_blank";
-          src.rel = "noopener";
+        const head = el("div", "sheet-head", s);
+        const row = el("div", "sheet-title", head);
+        el("h2", "", row, "📖 Spickzettel");
+        const x = el("button", "sheet-x", row, "✕");
+        x.setAttribute("aria-label", "Schließen");
+        x.addEventListener("click", closeModal);
+        const tabs = el("div", "tabs", head);
+
+        const section = (title: string) => {
+          const h = el("h3", "", s, title);
+          el("button", "tab", tabs, title).addEventListener("click", () => h.scrollIntoView({ behavior: "smooth" }));
+        };
+        section("Regeln");
+        for (const { card, signs } of cards) {
+          const box = el("div", "sheet-rule", s);
+          const top = el("div", "sheet-rule-top", box);
+          el("strong", "", top, card.title);
+          for (const c of signs) top.appendChild(c);
+          speakBtn(top, () => `${card.title}. ${card.text}`);
+          el("p", "", box, card.text);
+          sourceLink(box, card);
         }
-        el("h3", "", s, "Verkehrszeichen");
+        section("Verkehrszeichen");
         for (const e of entries) {
           const row = el("div", "sheet-row", s);
-          row.appendChild(e.canvas);
-          const t = el("div", "", row);
+          el("div", "sign-box", row).appendChild(e.canvas);
+          const t = el("div", "sign-text", row);
           el("strong", "", t, e.name);
           el("p", "", t, e.text);
+          speakBtn(row, () => `${e.name}. ${e.text}`);
         }
       });
     },
 
     /**
-     * End of a level. `next` names the level that is now open; `missing` = tasks still needed
-     * for the unlock share (0 = level done). Closing leads to the map.
+     * End of a level. `missing` = tasks still needed for the unlock share (0 = level done).
+     * `next` (the next level's name) is set when that level is playable; it then gets the main button.
      */
-    /** `next` (the next level's name) is set when that level is playable; it then gets the main button. */
     showLevelDone(
       o: { title: string; stars: number; n: number; missing: number; next?: string; last: boolean },
       go: { map: () => void; next: () => void },

@@ -1,4 +1,9 @@
 /* Smartphone portrait first (~390×844). Larger screens get a few upgrades at the end. */
+:root {
+  --ink: #222; --muted: #5d6670; --bg: #eaf5ff; --card: #fff; --soft: #eef3f7; --line: #e3e9ef;
+  --green: #2fa84f; --blue: #2f6fd6; --red: #e8543a; --gold: #f5b301;
+  --radius: 18px; --shadow: 0 2px 8px #0002; --shadow-lift: 0 4px 14px #0003;
+}
 html, body { margin: 0; height: 100%; overflow: hidden; font-family: system-ui, sans-serif;
   user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
 /* touch-action none: otherwise mobile Safari scrolls/zooms instead of rotating the camera */
@@ -70,40 +75,93 @@ canvas { display: block; }
 .menu-btn { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px;
   border: none; border-radius: 12px; background: #eef3f7; font-size: 20px; }
 
-.screen { position: absolute; inset: 0; background: #eaf5ff; overflow: auto; z-index: 2;
+.screen { position: absolute; inset: 0; background: var(--bg); overflow: auto; z-index: 2; box-sizing: border-box;
   padding: calc(14px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom)); }
-.map-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
-.map-head h1 { font-size: 19px; margin: 0; }
-.levels { display: flex; flex-direction: column; gap: 10px; }
-.level { display: flex; align-items: center; gap: 12px; text-align: left; border: none; border-radius: 18px;
-  background: #fff; padding: 12px 14px; box-shadow: 0 2px 8px #0002; color: #222; font: inherit; }
-.level.locked { opacity: .55; }
-.level-icon { font-size: 34px; line-height: 1; width: 44px; text-align: center; }
-.level-info { display: flex; flex-direction: column; gap: 3px; }
+.map-head { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 14px; margin-bottom: 14px; }
+.map-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+/* Shrinks with the screen instead of wrapping "Fahrrad-Führerschein" onto two lines at 360 px. */
+.map-head h1 { font-size: clamp(15px, 4.7vw, 21px); white-space: nowrap; margin: 0; color: var(--ink); }
+.cheat { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; border: none; border-radius: 14px;
+  background: var(--soft); padding: 6px 10px; font: 700 11px system-ui; color: var(--ink); min-width: 64px; min-height: 48px; }
+.cheat-ico { font-size: 22px; line-height: 1; }
+.map-total { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.bar-track { display: block; height: 8px; border-radius: 4px; background: var(--soft); overflow: hidden; flex: 1; }
+.bar-fill { display: block; height: 100%; border-radius: 4px; background: var(--lc, var(--green)); }
+
+/* Levels as stops on a road: a dashed line runs behind the icon tiles and shows in the gaps. */
+.levels { position: relative; display: flex; flex-direction: column; gap: 12px; }
+.levels::before { content: ""; position: absolute; left: 36px; top: 20px; bottom: 20px;
+  border-left: 4px dashed #b9c6d3; }
+.level { position: relative; display: flex; align-items: center; gap: 12px; text-align: left; border: none;
+  border-radius: var(--radius); background: var(--card); padding: 12px 14px 12px 12px; box-shadow: var(--shadow);
+  color: var(--ink); font: inherit; min-height: 64px; }
+.level.next { box-shadow: 0 0 0 3px var(--lc), var(--shadow-lift); }
+.level.locked { background: #f4f8fb; box-shadow: none; color: #6b747d; padding-top: 8px; padding-bottom: 8px; min-height: 52px; }
+.level-icon { flex: none; width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center;
+  font-size: 28px; line-height: 1; background: color-mix(in srgb, var(--lc) 16%, white); }
+.level.locked .level-icon { width: 40px; height: 40px; font-size: 20px; background: var(--soft); margin: 0 4px; }
+.level-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .level-info strong { font-size: 17px; }
-.level-sub { font-size: 14px; color: #555; }
-.option { display: flex; align-items: center; gap: 10px; margin: 16px 4px; font-size: 16px; color: #333; }
-.option input { width: 24px; height: 24px; margin: 0; accent-color: #2fa84f; }
+.level.locked strong { font-size: 16px; font-weight: 600; }
+.level-sub { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.level-stars { color: var(--gold); letter-spacing: 1px; font-size: 14px; }
+.level-hint { font-size: 13px; color: var(--muted); }
+.level-badge { flex: none; font: 800 13px system-ui; color: #fff; background: var(--lc); border-radius: 12px; padding: 5px 9px; }
+.level-badge.done { background: var(--green); width: 28px; height: 28px; padding: 0; border-radius: 50%;
+  display: grid; place-items: center; font-size: 16px; }
+
+.settings { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 4px 14px; margin: 16px 0; }
+.settings h3 { margin: 10px 0 2px; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+.option { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 52px;
+  font-size: 16px; color: var(--ink); }
+.option + .option { border-top: 1px solid var(--line); }
+.switch { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 50px; height: 30px; margin: 0;
+  border-radius: 15px; background: #c9d2db; transition: background .2s; }
+.switch::before { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px #0004; transition: transform .2s; }
+.switch:checked { background: var(--green); }
+.switch:checked::before { transform: translateX(20px); }
+.switch:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 /* Sticky at the bottom: the obvious, thumb-reachable way out of the menu. */
 .map-close { position: sticky; bottom: 0; width: 100%; }
 
 .modal { position: absolute; inset: 0; background: #0006; z-index: 3; display: flex; align-items: flex-end; }
-.sheet { background: #fff; width: 100%; max-height: 86vh; overflow: auto; border-radius: 22px 22px 0 0;
+.sheet { background: var(--card); width: 100%; max-height: 86vh; overflow: auto; border-radius: 22px 22px 0 0;
   padding: 18px 16px calc(16px + env(safe-area-inset-bottom)); box-sizing: border-box; }
 .sheet h2 { margin: 0 0 10px; font-size: 20px; }
 .sheet p { font-size: 16px; line-height: 1.45; margin: 6px 0; }
 .sheet .close { width: 100%; margin-top: 14px; }
 .level-done { text-align: center; }
-.stars-big { text-align: center; font-size: 40px; color: #f5b301; letter-spacing: 4px; animation: grow .5s ease-out; }
+.stars-big { text-align: center; font-size: 40px; color: var(--gold); letter-spacing: 4px; animation: grow .5s ease-out; }
 @keyframes grow { from { transform: scale(.3); opacity: 0; } }
 .card-signs { display: flex; gap: 10px; flex-wrap: wrap; }
-.card-signs canvas, .sheet-row canvas { height: 64px; width: auto; flex: none; }
-.source { display: block; font-size: 13px; color: #2f6fd6; margin: 6px 0 4px; }
-.sheet h3 { margin: 16px 0 4px; font-size: 17px; color: #2f6fd6; }
-.sheet-rule { padding: 8px 0; border-bottom: 1px solid #eee; }
-.sheet-rule p { margin: 2px 0; font-size: 15px; }
-.sheet-row { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
-.sheet-row p { margin: 2px 0 0; font-size: 15px; }
+.card-signs canvas { height: 64px; width: auto; flex: none; }
+.source { display: block; width: fit-content; font-size: 12px; color: var(--muted); margin: 4px 0 2px; text-decoration: none; }
+
+/* Spickzettel: header with ✕ and jump tabs sticks to the top of the scrolling sheet. */
+.sheet-head { position: sticky; top: -18px; z-index: 1; background: var(--card); margin: -18px -16px 4px; padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--line); }
+.sheet-title { display: flex; align-items: center; justify-content: space-between; }
+.sheet-head h2 { margin: 0; }
+.sheet-x { width: 44px; height: 44px; border: none; border-radius: 50%; background: var(--soft); font-size: 18px; color: var(--ink); }
+.tabs { display: flex; gap: 8px; margin-top: 8px; }
+.tab { border: none; border-radius: 16px; background: var(--soft); padding: 8px 14px; min-height: 36px;
+  font: 700 14px system-ui; color: var(--ink); }
+.sheet h3 { margin: 18px 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted);
+  scroll-margin-top: 110px; }
+.sheet-rule { background: var(--soft); border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; }
+.sheet-rule-top { display: flex; align-items: center; gap: 8px; }
+.sheet-rule-top strong { flex: 1; font-size: 16px; }
+.sheet-rule-top canvas { height: 30px; width: auto; flex: none; }
+.sheet-rule p { margin: 4px 0 0; font-size: 15px; }
+.sheet-row { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.sign-box { flex: none; width: 84px; display: grid; place-items: center; }
+.sign-box canvas { max-width: 84px; max-height: 60px; width: auto; height: auto; }
+.sign-text { flex: 1; min-width: 0; }
+.sign-text p { margin: 2px 0 0; font-size: 15px; }
+.speak { flex: none; width: 40px; height: 40px; border: none; border-radius: 50%; background: var(--card);
+  box-shadow: var(--shadow); font-size: 18px; line-height: 1; padding: 0; }
+.sheet-row .speak { background: var(--soft); box-shadow: none; }
 
 .fps { position: absolute; top: calc(4px + env(safe-area-inset-top)); right: 6px; z-index: 5; pointer-events: none;
   background: #000a; color: #0f0; font: 12px ui-monospace, monospace; padding: 2px 6px; border-radius: 6px; }
@@ -118,6 +176,6 @@ canvas { display: block; }
   .banner { font-size: 60px; }
   .modal { align-items: center; justify-content: center; }
   .sheet { width: min(620px, 94vw); border-radius: 22px; }
-  .levels, .option, .map-close { max-width: 640px; margin-left: auto; margin-right: auto; }
+  .map-head, .levels, .settings, .map-close { max-width: 640px; margin-left: auto; margin-right: auto; }
   .map-close { display: flex; }
 }

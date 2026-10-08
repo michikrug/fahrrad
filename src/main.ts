@@ -67,7 +67,10 @@ function showCard(id: string) {
 }
 
 function openSheet() {
-  ui.showSheet(rules, (Object.keys(signInfo) as SignId[]).map((id) => ({ canvas: signImg(id), ...signInfo[id] })));
+  ui.showSheet(
+    rules.map((card) => ({ card, signs: (card.signs ?? []).map(signImg) })),
+    (Object.keys(signInfo) as SignId[]).map((id) => ({ canvas: signImg(id), ...signInfo[id] })),
+  );
 }
 
 /** Continue where the kid left off: first unsolved scenario, else from the start. */
@@ -78,8 +81,18 @@ function startLevel(i: number) {
 
 function showMap() {
   // The scene behind keeps running, so closing the map resumes exactly where the kid was.
+  const stats = levels.map((l) => levelStats(l, progress));
+  const need = (i: number) => Math.max(0, Math.ceil(stats[i].n * UNLOCK_SHARE) - stats[i].solved);
+  const locked = levels.map((_, i) => !free && !isUnlocked(levels, i, progress));
+  const next = levels.findIndex((_, i) => !locked[i] && need(i) > 0);
+  // Only the first locked level says what is missing; repeating it on every one is noise.
+  const firstLocked = locked.indexOf(true);
+  const hint = (i: number) => `Noch ${need(i)} ${need(i) === 1 ? "Aufgabe" : "Aufgaben"} in „${levels[i].title}“`;
   ui.showMap(
-    levels.map((l, i) => ({ ...l, ...levelStats(l, progress), locked: !free && !isUnlocked(levels, i, progress) })),
+    levels.map((l, i) => ({
+      ...l, ...stats[i], locked: locked[i], done: need(i) === 0, next: i === next,
+      hint: i === firstLocked ? hint(i - 1) : undefined,
+    })),
     {
       pick: startLevel,
       openSheet,
