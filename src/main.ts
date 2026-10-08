@@ -19,7 +19,7 @@ const world = createWorld(app);
 const ui = createUI(app);
 const rig = createCameraRig(world);
 
-let index = 0; // into the flat `scenarios` list; levels are consecutive slices of it
+let index = -1; // into the flat `scenarios` list (-1 = none loaded yet); levels are consecutive slices of it
 let progress = loadProgress();
 let free = loadFree(); // all levels open, ignoring the 80 % rule
 let mistakes = 0; // wrong answers on the current scenario — a star needs zero
@@ -68,32 +68,31 @@ function openSheet() {
   ui.showSheet(rules, (Object.keys(signInfo) as SignId[]).map((id) => ({ canvas: signImg(id), ...signInfo[id] })));
 }
 
-/** `canClose`: opened from a running task (menu button), so offer the way back to it. */
-function showMap(canClose = false) {
+function showMap() {
   // The scene behind keeps running, so closing the map resumes exactly where the kid was.
   ui.showMap(
     levels.map((l, i) => ({ ...l, ...levelStats(l, progress), locked: !free && !isUnlocked(levels, i, progress) })),
     {
       pick(i) {
-        ui.hideMap();
         // Continue where the kid left off: first unsolved scenario, else from the start.
         const first = levels[i].scenarios.find((s) => !progress[s.id]?.solved) ?? levels[i].scenarios[0];
-        index = scenarios.indexOf(first);
-        load(index);
+        go(scenarios.indexOf(first));
       },
       openSheet,
       free,
       setFree(on) {
         free = on;
         saveFree(on);
-        showMap(canClose);
+        showMap();
       },
-      close: canClose ? ui.hideMap : undefined,
+      // Only once the kid has opened a task: before that the scene behind is just a backdrop.
+      close: played ? () => go(index, false) : undefined,
     },
   );
 }
 
 function load(i: number) {
+  index = i;
   mistakes = 0;
   disposeTree(level);
   const s = scenarios[i];
@@ -262,24 +261,63 @@ function levelDone() {
     title: levels[i].title, n, stars, last,
     missing: Math.max(0, Math.ceil(n * UNLOCK_SHARE) - solved),
     next: !last && isUnlocked(levels, i + 1, progress) ? `${i + 2}. ${levels[i + 1].title}` : undefined,
-  }, showMap);
+  }, () => go(null));
 }
 
 ui.onNext(() => {
   if (index + 1 >= scenarios.length || levelOf(index + 1) !== levelOf(index)) return levelDone();
-  load(++index);
+  go(index + 1);
 });
-ui.onMenu(() => showMap(true));
+ui.onMenu(() => go(null));
 // Stay inside the level; the stepper's buttons are disabled at both ends.
 ui.onStep((d) => {
-  if (levelOf(index + d) === levelOf(index)) load((index += d));
+  if (levelOf(index + d) === levelOf(index)) go(index + d);
 });
 
-// A scene always sits behind the map. ?s=2 jumps straight into a scenario — handy for testing.
-const jump = new URLSearchParams(location.search).get("s");
-index = Math.min(Number(jump) || 0, scenarios.length - 1);
-load(index);
-if (jump === null) showMap();
+// --- URL and history: ?s=<scenario id> is a task, no ?s is the level map. ---
+let played = false; // a task has been opened — the map then offers "Zurück zur Aufgabe"
+
+/** Scenario from ?s=: its id, or its number (handy for testing). */
+function indexFromUrl(): number | null {
+  const s = new URLSearchParams(location.search).get("s");
+  if (s === null) return null;
+  const i = /^\d+$/.test(s) ? Number(s) : scenarios.findIndex((x) => x.id === s);
+  return i >= 0 && i < scenarios.length ? i : null;
+}
+
+/** Same URL with ?s= set to the task, or removed for the map. Other parameters (?fps) stay. */
+function urlFor(i: number | null) {
+  const url = new URL(location.href);
+  if (i === null) url.searchParams.delete("s");
+  else url.searchParams.set("s", scenarios[i].id);
+  return url;
+}
+
+/** Navigate: new history entry, then show it. `restart` = load the task fresh even if it is the current one. */
+function go(i: number | null, restart = true) {
+  const url = urlFor(i);
+  if (url.href !== location.href) history.pushState(null, "", url);
+  render(restart);
+}
+
+/** Show what the URL says: on start, after go(), and on browser back/forward. */
+function render(restart: boolean) {
+  ui.hideModal();
+  const i = indexFromUrl();
+  if (i === null) {
+    if (index < 0) load(0); // a scene always sits behind the map
+    return showMap();
+  }
+  played = true;
+  ui.hideMap();
+  // Back/forward to the task you were on resumes it instead of starting over.
+  if (restart || i !== index) load(i);
+}
+
+addEventListener("popstate", () => render(false));
+// Unknown ?s= falls back to the map; numbers are rewritten to ids so the URL stays readable.
+history.replaceState(null, "", urlFor(indexFromUrl()));
+render(true);
 
 // ?fps shows the frame rate — for checking smoothness on a real phone (also in the production build).
 if (new URLSearchParams(location.search).has("fps")) {

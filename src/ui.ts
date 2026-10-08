@@ -171,6 +171,11 @@ export function createUI(root: HTMLElement) {
       map.classList.remove("hidden");
     },
     hideMap: () => map.classList.add("hidden"),
+    /** Close any sheet without its follow-up action — the URL decides what shows next. */
+    hideModal() {
+      afterClose = () => {};
+      if (!modal.classList.contains("hidden")) closeModal();
+    },
 
     showCard(card: RuleCard, signs: HTMLCanvasElement[]) {
       openModal((s) => {
