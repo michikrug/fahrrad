@@ -43,6 +43,8 @@ let sim: {
   done: ((nearMiss: boolean) => void) | null;
 } | null = null;
 
+/** Counts resets, so a delayed result can tell whether its task is still the one on screen. */
+let resets = 0;
 const current = () => scenarios[index];
 const levelOf = (i: number) => levels.findIndex((l) => l.scenarios.includes(scenarios[i]));
 
@@ -190,6 +192,7 @@ function askChoice() {
 }
 
 function reset() {
+  resets++;
   sim = null;
   const s = current();
   for (const [arm, l] of lights) {
@@ -229,7 +232,12 @@ function drive() {
     sim = { runs: near.runs, t: 0, pair: near.pair, at: near.at, done: (nearMiss) => {
       if (!nearMiss) return showResult();
       ui.showBanner();
-      setTimeout(showResult, 1300);
+      // Skip if the task was reset or changed meanwhile: the result would land on the wrong task.
+      const at = resets, task = index;
+      setTimeout(() => {
+        if (at === resets) showResult();
+        else if (task === index) mistakes++; // a quick "Nochmal" still costs the first-try star
+      }, 1300);
     } };
   } else {
     // Correct: drive as the solution groups say (simultaneous where allowed). Wrong without conflict: as tapped.

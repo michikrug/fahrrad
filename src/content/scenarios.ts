@@ -160,7 +160,7 @@ const L3: Scenario[] = [
   },
   {
     id: "sign-stop", rule: "stopp", title: "Stoppschild",
-    layout: cross({ N: { signs: ["301"] }, S: { signs: ["206"] }, E: { signs: ["301"] }, W: { signs: ["206"] } }),
+    layout: cross({ N: { signs: ["206"] }, S: { signs: ["206"] }, E: { signs: ["301"] }, W: { signs: ["301"] } }),
     participants: [you(), car("car", "E", "straight", BLUE)],
     answer: [["car"], ["you"]],
     explain: "Vor dir steht ein Stoppschild. Du musst an der Linie ganz anhalten und alle anderen vorlassen. Erst dann darfst du fahren.",
