@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { Actor } from "./scene/actors";
+import { tube, type Actor } from "./scene/actors";
 import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import type { World } from "./scene/world";
 
@@ -72,15 +72,9 @@ function frontOfBike(barPos: THREE.Vector3) {
   const frame = new THREE.MeshLambertMaterial({ color: 0xd33f3f }); // same red as the bike model
   const tyre = new THREE.MeshLambertMaterial({ color: 0x222222 });
   const hub = new THREE.Vector3(0, 0.53, barPos.z + 0.05);
-  const tube = (a: THREE.Vector3, b: THREE.Vector3, r: number) => {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, a.distanceTo(b), 10), frame);
-    m.position.copy(a).lerp(b, 0.5);
-    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
-    return m;
-  };
   const headTop = barPos.clone().setY(barPos.y - 0.12);
-  for (const x of [-0.05, 0.05]) g.add(tube(headTop.clone().setX(x), hub.clone().setX(x), 0.022)); // fork legs
-  g.add(tube(headTop, headTop.clone().setY(headTop.y - 0.25), 0.035)); // head tube
+  for (const x of [-0.05, 0.05]) g.add(tube(headTop.clone().setX(x), hub.clone().setX(x), 0.022, frame)); // fork legs
+  g.add(tube(headTop, headTop.clone().setY(headTop.y - 0.25), 0.035, frame)); // head tube
   const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.06, 8, 32).rotateY(Math.PI / 2), tyre);
   wheel.position.copy(hub);
   g.add(wheel);
