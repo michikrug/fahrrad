@@ -242,19 +242,29 @@ function stepSim(dt: number) {
   }
 }
 
-/** One looping sound per road user that is moving right now; louder when near, panned to its side. */
+/**
+ * One looping sound per road user that is moving right now; louder when near, panned to its side.
+ * Cars and buses still waiting their turn idle quietly: otherwise an engine would only start up
+ * when the car sets off — on a wrong answer that is right before the near miss, under the horn.
+ */
 const voices = new Map<Actor, Voice>();
 const toCamera = new THREE.Vector3();
+const IDLE = 0.35;
 function updateSounds() {
-  const moving = new Set(sim?.runs.filter((r) => r.started && r.a.d < r.a.path.getLength()).map((r) => r.a));
-  for (const [a, v] of voices) if (!moving.has(a)) (v.stop(), voices.delete(a));
-  for (const a of moving) {
+  const level = new Map<Actor, number>();
+  for (const r of sim?.runs ?? []) {
+    if (r.a.d >= r.a.path.getLength()) continue;
+    if (r.started) level.set(r.a, 1);
+    else if (r.a.p.kind === "car" || r.a.p.kind === "bus") level.set(r.a, IDLE);
+  }
+  for (const [a, v] of voices) if (!level.has(a)) (v.stop(), voices.delete(a));
+  for (const [a, k] of level) {
     let v = voices.get(a);
     if (!v) voices.set(a, (v = moverSound((a.p.kind === "player" ? "bike" : a.p.kind) as MoverKind)));
     toCamera.copy(a.obj.position).applyMatrix4(world.camera.matrixWorldInverse);
     // Full volume within 12 m (the bike view), fading with distance; bird's-eye view sits ~30 m up.
     const gain = Math.min(1, 12 / Math.max(toCamera.length(), 1));
-    v.set(gain, THREE.MathUtils.clamp(toCamera.x / (Math.abs(toCamera.z) + 2), -1, 1) * 0.8);
+    v.set(gain * k, THREE.MathUtils.clamp(toCamera.x / (Math.abs(toCamera.z) + 2), -1, 1) * 0.8);
   }
 }
 
