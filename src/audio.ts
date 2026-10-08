@@ -190,6 +190,34 @@ export function moverSound(kind: MoverKind): Voice {
   };
 }
 
+/** Correct answer: a short fanfare — C–E–G rising, then a held high C; square + triangle for a brassy tone. */
+export function fanfare() {
+  const { c, out: dest } = out();
+  const now = c.currentTime;
+  const bus = c.createGain();
+  bus.gain.value = 0.16;
+  const lp = c.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 3200;
+  lp.connect(bus).connect(dest);
+  // [frequency, start, length] in Hz and seconds
+  for (const [f, t, d] of [[523.25, 0, 0.13], [659.25, 0.13, 0.13], [783.99, 0.26, 0.13], [1046.5, 0.39, 0.55]]) {
+    for (const [type, level] of [["square", 0.35], ["triangle", 1]] as const) {
+      const o = c.createOscillator();
+      o.type = type;
+      o.frequency.value = f;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0, now + t);
+      g.gain.linearRampToValueAtTime(level, now + t + 0.02);
+      g.gain.setValueAtTime(level, now + t + d * 0.7);
+      g.gain.exponentialRampToValueAtTime(0.001, now + t + d + 0.15);
+      o.connect(g).connect(lp);
+      o.start(now + t);
+      o.stop(now + t + d + 0.2);
+    }
+  }
+}
+
 /** Near miss: a honk if a car or bus is involved (`horn`), else the bell. */
 export function nearMissSound(horn: boolean) {
   if (!horn) return ringBell();

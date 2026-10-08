@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { moverSound, nearMissSound, ringBell, setSound, type MoverKind, type Voice } from "./audio";
+import { fanfare, moverSound, nearMissSound, ringBell, setSound, type MoverKind, type Voice } from "./audio";
 import { createCameraRig } from "./camera";
 import { firstMistake, isCorrect } from "./check";
 import { rules, signInfo } from "./content/rules";
@@ -52,6 +52,7 @@ function finish(ok: boolean) {
   progress = record(progress, s.id, ok, mistakes === 0);
   saveProgress(progress);
   if (!ok) mistakes++;
+  else fanfare();
   const card = rules.find((r) => r.id === s.rule)!;
   ui.showResult(ok, s.explain, { title: card.title, open: () => showCard(card.id) });
 }

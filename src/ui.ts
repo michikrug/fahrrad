@@ -471,8 +471,10 @@ export function createUI(root: HTMLElement) {
       again.textContent = ok ? "↺" : "Nochmal";
       resultHead.textContent = ok ? "Klasse gemacht!" : "Fast! Schau nochmal.";
       resultText.textContent = explain;
-      // Through the Vorlesen button, so it shows "Stopp" while reading.
-      if (autoRead && map.classList.contains("hidden")) read.click();
+      // Through the Vorlesen button, so it shows "Stopp" while reading — after the fanfare on a right
+      // answer, and only if the sheet is still there by then.
+      if (autoRead && map.classList.contains("hidden"))
+        setTimeout(() => result.classList.contains("hidden") || read.click(), ok ? 1100 : 0);
       next.classList.toggle("hidden", !ok);
     },
     hideResult() {
