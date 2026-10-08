@@ -156,12 +156,15 @@ export function createUI(root: HTMLElement) {
     modal.classList.add("hidden");
     afterClose();
   }
-  function openModal(build: (into: HTMLElement) => void, close = { icon: "✓", text: "Schließen", then: () => {}, primary: true }) {
+  /** `variant` "full": a full-screen page (level summary) instead of a bottom sheet. */
+  function openModal(build: (into: HTMLElement) => void, close = { icon: "✓", text: "Schließen", then: () => {}, primary: true }, variant = "") {
+    modal.className = `modal ${variant}`;
     sheet.replaceChildren();
     build(sheet);
     afterClose = close.then;
     const btn = el("button", close.primary ? "btn primary close" : "btn close", sheet);
-    setLabel(btn, close.icon, close.text);
+    if (close.icon) setLabel(btn, close.icon, close.text);
+    else btn.textContent = close.text;
     btn.addEventListener("click", closeModal);
     modal.classList.remove("hidden");
     sheet.scrollTop = 0;
@@ -336,22 +339,38 @@ export function createUI(root: HTMLElement) {
      * `next` (the next level's name) is set when that level is playable; it then gets the main button.
      */
     showLevelDone(
-      o: { title: string; stars: number; n: number; missing: number; next?: string; last: boolean },
+      o: {
+        number: number; title: string; n: number; solved: number; stars: number; missing: number;
+        next?: string; last: boolean; total: { solved: number; n: number };
+      },
       go: { map: () => void; next: () => void },
     ) {
       openModal((s) => {
         const done = o.missing === 0;
-        el("h2", "level-done", s, done ? "🎉 Level geschafft!" : "Fast geschafft!");
-        el("div", "stars-big", s, `${"★".repeat(o.stars)}${"☆".repeat(o.n - o.stars)}`);
-        el("p", "", s, `„${o.title}“: ${o.stars} von ${o.n} Aufgaben ohne Fehler gelöst.`);
+        el("div", "done-kicker", s, done ? `Level ${o.number} geschafft` : `Level ${o.number}: fast geschafft`);
+        el("h2", "", s, o.title);
+        // Stars on a gentle arch, the middle ones highest; earned ones gold, the rest outlined.
+        const row = el("div", "done-stars", s);
+        for (let k = 0; k < o.n; k++) {
+          const star = el("span", k < o.stars ? "on" : "", row, k < o.stars ? "★" : "☆");
+          const d = Math.abs(k - (o.n - 1) / 2) / Math.max(1, (o.n - 1) / 2); // 0 in the middle, 1 at the ends
+          star.style.transform = `translateY(${d * d * 22}px)`;
+          star.style.animationDelay = `${k * 0.08}s`;
+        }
+        el("div", "done-count", s, `${o.stars} von ${o.n} Sternen`);
+        const stats = el("div", "done-stats", s);
+        for (const [v, label] of [[`${o.solved}/${o.n}`, "geschafft"], [`${o.stars}/${o.n}`, "ohne Fehler"], [`${o.total.solved}/${o.total.n}`, "Gesamt"]]) {
+          const c = el("div", "", stats);
+          el("strong", "", c, v);
+          el("span", "", c, label);
+        }
         if (!done) el("p", "", s, `Löse noch ${o.missing} ${o.missing === 1 ? "Aufgabe" : "Aufgaben"}, dann ist das Level geschafft.`);
         else if (o.last) el("p", "", s, "Du hast die Abschlussprüfung geschafft! 🏆");
         if (o.next) {
-          const b = el("button", "btn primary close", s);
-          setLabel(b, "➜", `Weiter: ${o.next}`);
+          const b = el("button", "btn3d orange wide", s, `Nächstes Level: ${o.next}`);
           b.addEventListener("click", () => ((afterClose = go.next), closeModal()));
         }
-      }, { icon: "☰", text: "Zur Übersicht", then: go.map, primary: !o.next });
+      }, { icon: "", text: "Zur Karte", then: go.map, primary: false }, "full");
     },
 
     setView(mode: "bird" | "ego") {

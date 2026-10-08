@@ -329,10 +329,12 @@ function levelDone() {
   const i = levelOf(index);
   const { n, solved, stars } = levelStats(levels[i], progress);
   const last = i === levels.length - 1;
+  const all = levels.map((l) => levelStats(l, progress));
   ui.showLevelDone({
-    title: levels[i].title, n, stars, last,
+    number: i + 1, title: levels[i].title, n, solved, stars, last,
+    total: { solved: all.reduce((a, l) => a + l.solved, 0), n: all.reduce((a, l) => a + l.n, 0) },
     missing: Math.max(0, Math.ceil(n * UNLOCK_SHARE) - solved),
-    next: !last && (free || isUnlocked(levels, i + 1, progress)) ? `${i + 2}. ${levels[i + 1].title}` : undefined,
+    next: !last && (free || isUnlocked(levels, i + 1, progress)) ? levels[i + 1].title : undefined,
   }, { map: () => go(null), next: () => startLevel(i + 1) });
 }
 

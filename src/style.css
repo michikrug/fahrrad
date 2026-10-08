@@ -187,14 +187,28 @@ canvas { display: block; }
 .switch:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 
 .modal { position: absolute; inset: 0; background: #0006; z-index: 3; display: flex; align-items: flex-end; }
-.sheet { background: var(--card); width: 100%; max-height: 86vh; overflow: auto; border-radius: 22px 22px 0 0;
+.sheet { background: var(--card); width: 100%; max-height: 86vh; overflow: auto; border-radius: 26px 26px 0 0;
   padding: 18px 16px calc(16px + env(safe-area-inset-bottom)); box-sizing: border-box; }
-.sheet h2 { margin: 0 0 10px; font-size: 20px; }
+.sheet h2 { margin: 0 0 10px; font: 900 22px var(--font); }
 .sheet p { font-size: 16px; line-height: 1.45; margin: 6px 0; }
 .sheet .close { width: 100%; margin-top: 14px; }
-.level-done { text-align: center; }
-.stars-big { text-align: center; font-size: 40px; color: var(--gold); letter-spacing: 4px; animation: grow .5s ease-out; }
+/* Level summary: a full blue page, stars on an arch, stats, next level in orange. */
+.modal.full { background: linear-gradient(#2d6ad8, #1f4fae); align-items: stretch; }
+.modal.full .sheet { background: none; max-height: none; border-radius: 0; display: flex; flex-direction: column;
+  justify-content: center; text-align: center; color: #fff; padding: calc(24px + env(safe-area-inset-top)) 22px calc(20px + env(safe-area-inset-bottom)); }
+.done-kicker { font: 900 15px var(--font); letter-spacing: 2px; text-transform: uppercase; color: #ffb35c; }
+.modal.full h2 { font: 900 clamp(28px, 8vw, 38px) var(--font); margin: 6px 0 22px; }
+.done-stars { display: flex; justify-content: center; gap: 4px; margin-bottom: 18px; font-size: clamp(40px, 12vw, 58px); }
+.done-stars span { color: #ffffff55; animation: grow .45s ease-out both; }
+.done-stars span.on { color: var(--gold); text-shadow: 0 3px 0 #c98f00; }
 @keyframes grow { from { transform: scale(.3); opacity: 0; } }
+.done-count { font: 800 19px var(--font); margin-bottom: 18px; }
+.done-stats { display: flex; justify-content: space-around; background: #ffffff1f; border-radius: 22px; padding: 14px 8px; margin-bottom: 14px; }
+.done-stats div { display: flex; flex-direction: column; gap: 2px; }
+.done-stats strong { font: 900 24px var(--font); }
+.done-stats span { font: 700 13px var(--font); opacity: .85; }
+.modal.full p { color: #fff; margin: 4px 0 6px; font-weight: 600; }
+.modal.full .close { background: #ffffff26; color: #fff; }
 .card-signs { display: flex; gap: 10px; flex-wrap: wrap; }
 .card-signs canvas { height: 64px; width: auto; flex: none; }
 .source { display: block; width: fit-content; font-size: 12px; color: var(--muted); margin: 4px 0 2px; text-decoration: none; }
