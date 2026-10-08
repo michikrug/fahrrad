@@ -41,7 +41,7 @@ canvas { display: block; }
 .pill-mid { flex: 1; min-width: 0; text-align: center; line-height: 1.15; }
 .pill-count { display: block; font: 800 11px var(--font); letter-spacing: 1.2px; text-transform: uppercase; color: #8a99ad; }
 .pill-title { display: block; font: 800 16px var(--font); }
-.step-btn { flex: none; width: 40px; height: 40px; border: none; border-radius: 50%; background: var(--blue-soft);
+.step-btn { flex: none; width: 44px; height: 44px; border: none; border-radius: 50%; background: var(--blue-soft);
   font: 900 20px/1 var(--font); color: var(--blue); padding: 0 0 2px; }
 .step-btn:disabled { opacity: .3; }
 
@@ -69,14 +69,14 @@ canvas { display: block; }
 .soft-btn .ico, .pill-btn .ico { font-size: 1.1em; line-height: 1; }
 
 /* Feedback: round ✓/! badge sitting on the sheet's top edge, then text, pills and the big action. */
-.fb-sheet { position: relative; margin-top: 34px; padding-top: 44px; text-align: center; max-height: 52vh; overflow: auto; }
+.fb-sheet { position: relative; margin-top: 34px; padding-top: 44px; text-align: center; }
 .fb-badge { position: absolute; top: -34px; left: 50%; transform: translateX(-50%); width: 68px; height: 68px;
   border-radius: 50%; display: grid; place-items: center; font: 900 34px var(--font); color: #fff;
   background: var(--orange); border: 5px solid #fff; box-shadow: 0 4px 10px #0002; }
 .fb-sheet.ok .fb-badge { background: var(--green); }
-.fb-sheet { overflow: visible; }
 .fb-sheet h2 { margin: 0 0 6px; font: 900 24px var(--font); }
-.fb-sheet p { margin: 0 auto 12px; max-width: 34em; font-size: 16px; line-height: 1.45; color: #34425c; }
+/* Only the text scrolls: the badge sticks out of the sheet and the buttons must stay on screen. */
+.fb-sheet p { margin: 0 auto 12px; max-width: 34em; max-height: 30vh; overflow: auto; font-size: 16px; line-height: 1.45; color: #34425c; }
 .fb-pills { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
 .pill-btn { display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: 20px; background: var(--blue-soft);
   color: var(--blue); font: 800 15px var(--font); padding: 0 16px; height: 42px; min-width: 130px; justify-content: center; }
@@ -194,8 +194,10 @@ canvas { display: block; }
 .sheet .close { width: 100%; margin-top: 14px; }
 /* Level summary: a full blue page, stars on an arch, stats, next level in orange. */
 .modal.full { background: linear-gradient(#2d6ad8, #1f4fae); align-items: stretch; }
-.modal.full .sheet { background: none; max-height: none; border-radius: 0; display: flex; flex-direction: column;
-  justify-content: center; text-align: center; color: #fff; padding: calc(24px + env(safe-area-inset-top)) 22px calc(20px + env(safe-area-inset-bottom)); }
+/* Centred via auto margins, not justify-content: when it is taller than a landscape phone it must still scroll from the top. */
+.modal.full .sheet { background: none; max-height: 100%; border-radius: 0; display: flex; flex-direction: column; text-align: center; color: #fff; padding: calc(24px + env(safe-area-inset-top)) 22px calc(20px + env(safe-area-inset-bottom)); }
+.modal.full .sheet > :first-child { margin-top: auto; }
+.modal.full .sheet > :last-child { margin-bottom: auto; }
 .done-kicker { font: 900 15px var(--font); letter-spacing: 2px; text-transform: uppercase; color: #ffb35c; }
 .modal.full h2 { font: 900 clamp(28px, 8vw, 38px) var(--font); margin: 6px 0 22px; }
 .done-stars { display: flex; justify-content: center; gap: 4px; margin-bottom: 18px; font-size: clamp(40px, 12vw, 58px); }
@@ -217,6 +219,12 @@ canvas { display: block; }
   background: #000a; color: #0f0; font: 12px ui-monospace, monospace; padding: 2px 6px; border-radius: 6px; }
 
 /* Tablet / desktop: a bit more air, dock centred instead of full width. */
+/* Phone in landscape: the badge would cover the task title, the sheet needs the height. */
+@media (max-height: 500px) {
+  .fb-badge { display: none; }
+  .fb-sheet { margin-top: 0; padding-top: 14px; }
+}
+
 @media (min-width: 700px) {
   .hud-top { left: 50%; right: auto; transform: translateX(-50%); width: min(640px, 94vw); }
   .pill-title { font-size: 19px; }

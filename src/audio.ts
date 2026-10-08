@@ -25,13 +25,16 @@ speechSynthesis.addEventListener("voiceschanged", pickVoice);
 // utterance on the first touch (browsers only allow speech after a user gesture).
 addEventListener("pointerdown", () => speechSynthesis.speak(new SpeechSynthesisUtterance("")), { once: true });
 
+let current: SpeechSynthesisUtterance | undefined;
 export function speak(text: string, onEnd: () => void) {
   stopSpeaking();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "de-DE";
   const v = navigator.onLine ? voice : (offlineVoice ?? voice);
   if (v) u.voice = v;
-  u.onend = u.onerror = () => (duck(false), onEnd());
+  // A cancelled utterance ends asynchronously, after the next one has started: only the current one un-ducks.
+  current = u;
+  u.onend = u.onerror = () => (current === u && duck(false), onEnd());
   duck(true);
   speechSynthesis.speak(u);
 }
