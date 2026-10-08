@@ -155,27 +155,11 @@ export function moverSound(kind: MoverKind): Voice {
   };
 }
 
-/** Near miss: squealing tyres and, at the same moment, a honk (`horn`) or the bell. */
+/** Near miss: a honk if a car or bus is involved (`horn`), else the bell. */
 export function nearMissSound(horn: boolean) {
+  if (!horn) return ringBell();
   const { c, out: dest } = out();
   const now = c.currentTime;
-  const env = c.createGain();
-  env.gain.setValueAtTime(0.3, now);
-  env.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-  env.connect(dest);
-  const squeal = c.createOscillator();
-  squeal.type = "sawtooth";
-  squeal.frequency.setValueAtTime(1150, now);
-  squeal.frequency.exponentialRampToValueAtTime(750, now + 0.7);
-  const bp = c.createBiquadFilter();
-  bp.type = "bandpass";
-  bp.frequency.value = 1800;
-  bp.Q.value = 3;
-  const n = noise(c);
-  squeal.connect(bp);
-  n.connect(bp).connect(env);
-  for (const s of [squeal, n]) (s.start(now), s.stop(now + 0.8));
-  if (!horn) return ringBell();
   // Car horn: two square tones a third apart, slightly muffled.
   const h = c.createGain();
   h.gain.setValueAtTime(0, now);
