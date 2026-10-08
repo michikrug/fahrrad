@@ -155,7 +155,7 @@ export function moverSound(kind: MoverKind): Voice {
   };
 }
 
-/** Near miss: squealing tyres, then a honk (`horn`) or the bell. */
+/** Near miss: squealing tyres and, at the same moment, a honk (`horn`) or the bell. */
 export function nearMissSound(horn: boolean) {
   const { c, out: dest } = out();
   const now = c.currentTime;
@@ -175,13 +175,13 @@ export function nearMissSound(horn: boolean) {
   squeal.connect(bp);
   n.connect(bp).connect(env);
   for (const s of [squeal, n]) (s.start(now), s.stop(now + 0.8));
-  if (!horn) return void setTimeout(ringBell, 450);
+  if (!horn) return ringBell();
   // Car horn: two square tones a third apart, slightly muffled.
   const h = c.createGain();
-  h.gain.setValueAtTime(0, now + 0.45);
-  h.gain.linearRampToValueAtTime(0.12, now + 0.47);
-  h.gain.setValueAtTime(0.12, now + 0.95);
-  h.gain.linearRampToValueAtTime(0, now + 1);
+  h.gain.setValueAtTime(0, now);
+  h.gain.linearRampToValueAtTime(0.12, now + 0.02);
+  h.gain.setValueAtTime(0.12, now + 0.5);
+  h.gain.linearRampToValueAtTime(0, now + 0.55);
   const lp = c.createBiquadFilter();
   lp.type = "lowpass";
   lp.frequency.value = 1800;
@@ -191,8 +191,8 @@ export function nearMissSound(horn: boolean) {
     o.type = "square";
     o.frequency.value = f;
     o.connect(lp);
-    o.start(now + 0.45);
-    o.stop(now + 1.05);
+    o.start(now);
+    o.stop(now + 0.6);
   }
 }
 
