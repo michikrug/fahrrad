@@ -140,7 +140,11 @@ export function createUI(root: HTMLElement) {
   const task = el("p", "task-q", taskSheet);
   const bar = el("div", "bar", taskSheet);
   const reset = el("button", "soft-btn", bar);
-  const view = el("button", "soft-btn", bar);
+  // View switch as a two-way toggle; the highlighted side is the view you are in.
+  const view = el("div", "view-toggle", bar);
+  view.setAttribute("role", "group");
+  view.ariaLabel = "Ansicht";
+  const viewBtns = { bird: el("button", "", view, "Von oben"), ego: el("button", "", view, "Vom Rad") };
   setLabel(reset, "↺", "Nochmal");
 
   const resetRead = readToggle(read, () => `${resultHead.textContent} ${resultText.textContent}`);
@@ -376,13 +380,18 @@ export function createUI(root: HTMLElement) {
     },
 
     setView(mode: "bird" | "ego") {
-      if (mode === "bird") setLabel(view, "🚲", "Vom Rad");
-      else setLabel(view, "🦅", "Von oben");
+      for (const [m, b] of Object.entries(viewBtns)) {
+        b.classList.toggle("on", m === mode);
+        b.ariaPressed = String(m === mode);
+      }
       // Re-insert to restart the fade-out animation each time the ego view opens.
       hint.classList.toggle("hidden", mode !== "ego");
       hint.replaceWith(hint);
     },
-    onView: (f: () => void) => view.addEventListener("click", f),
+    /** `f` switches the view; tapping the side that is already on does nothing. */
+    onView: (f: () => void) => {
+      for (const b of Object.values(viewBtns)) b.addEventListener("click", () => b.classList.contains("on") || f());
+    },
 
     /** One button per road user — the main way to pick the order, works in every view. */
     showChips(items: Chip[], pick: (id: string) => void) {

@@ -69,6 +69,11 @@ canvas { display: block; }
 .soft-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: none;
   border-radius: 16px; background: var(--soft); min-height: 48px; font: 800 16px var(--font); color: var(--ink); }
 .soft-btn .ico, .pill-btn .ico { font-size: 1.1em; line-height: 1; }
+.bar > .soft-btn { flex: 0 0 auto; padding: 0 18px; } /* Nochmal takes its label's width, the toggle the rest */
+.view-toggle { flex: 1; display: flex; background: var(--soft); border-radius: 16px; padding: 4px; gap: 4px; }
+.view-toggle button { flex: 1; border: none; border-radius: 12px; background: none; min-height: 40px; white-space: nowrap;
+  font: 800 15px var(--font); color: var(--muted); padding: 0 6px; }
+.view-toggle button.on { background: var(--card); color: var(--blue); box-shadow: 0 2px 6px #16233f1f; }
 
 /* Feedback: round ✓/! badge sitting on the sheet's top edge, then text, pills and the big action. */
 .fb-sheet { position: relative; margin-top: 34px; padding-top: 44px; text-align: center; }
