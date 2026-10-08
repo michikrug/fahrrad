@@ -29,9 +29,16 @@ function setLabel(b: HTMLElement, icon: string, text: string, iconAfter = false)
  * Turns a button into a Vorlesen/Stopp toggle. Both labels share one fixed-size button so it
  * doesn't jump when switching. Returns a reset for when the text goes away.
  */
-function readToggle(b: HTMLElement, text: () => string) {
+function readToggle(b: HTMLElement, text: () => string, iconOnly = false) {
   let reading = false;
-  const label = (on: boolean) => ((reading = on), on ? setLabel(b, "⏹", "Stopp") : setLabel(b, "🔊", "Vorlesen"));
+  const label = (on: boolean) => {
+    reading = on;
+    if (iconOnly) {
+      b.textContent = on ? "⏹" : "🔊";
+      b.ariaLabel = on ? "Stopp" : "Vorlesen";
+    } else if (on) setLabel(b, "⏹", "Stopp");
+    else setLabel(b, "🔊", "Vorlesen");
+  };
   label(false);
   b.addEventListener("click", () => {
     if (reading) {
@@ -137,7 +144,9 @@ export function createUI(root: HTMLElement) {
   const cards = el("div", "cards hidden", dock);
   const chips = el("div", "chips hidden", dock);
   const taskSheet = el("div", "task-sheet", dock);
-  const task = el("p", "task-q", taskSheet);
+  const taskRow = el("div", "task-row", taskSheet);
+  const task = el("p", "task-q", taskRow);
+  const taskRead = el("button", "read-round", taskRow);
   const bar = el("div", "bar", taskSheet);
   const reset = el("button", "soft-btn", bar);
   // View switch as a two-way toggle; the highlighted side is the view you are in.
@@ -147,6 +156,7 @@ export function createUI(root: HTMLElement) {
   const viewBtns = { bird: el("button", "", view, "Von oben"), ego: el("button", "", view, "Vom Rad") };
   setLabel(reset, "↺", "Nochmal");
 
+  const resetTaskRead = readToggle(taskRead, () => `${title.textContent}. ${task.textContent}`, true);
   const resetRead = readToggle(read, () => `${resultHead.textContent} ${resultText.textContent}`);
 
   const chipEls = new Map<string, HTMLButtonElement>();
@@ -434,9 +444,11 @@ export function createUI(root: HTMLElement) {
       fwd.disabled = pos.i === pos.n - 1;
       stopSpeaking();
       resetRead();
+      resetTaskRead();
       title.textContent = t;
       task.textContent = taskText;
-      if (autoRead && map.classList.contains("hidden")) speak(`${t}. ${taskText}`, () => {});
+      // Through the button, so it shows ⏹ while reading and can stop it.
+      if (autoRead && map.classList.contains("hidden")) taskRead.click();
       result.classList.add("hidden");
       taskSheet.classList.remove("hidden");
       cards.classList.add("hidden");
