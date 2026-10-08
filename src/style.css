@@ -50,11 +50,12 @@ canvas { display: block; }
 .dock > * { pointer-events: auto; }
 .chips, .cards { padding: 0 10px; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-.chip { --c: #888; flex: 1 1 40%; max-width: 220px; display: flex; align-items: center; justify-content: center; gap: 8px;
-  font: 800 18px var(--font); color: var(--c); background: #fff; border: 3px solid var(--c); border-radius: 18px;
-  padding: 6px 12px; min-height: 52px; box-shadow: 0 4px 0 var(--c); }
-.chip .num { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: none;
-  background: #eef2f6; border: 2px dashed #c3cedb; color: var(--ink); font-weight: 900; font-size: 16px; box-sizing: border-box; }
+/* Order chips: compact (the scene matters more), but still a 44 px touch target. */
+.chip { --c: #888; display: flex; align-items: center; justify-content: center; gap: 6px;
+  font: 800 16px var(--font); color: var(--c); background: #fff; border: 2px solid var(--c); border-radius: 22px;
+  padding: 4px 14px 4px 6px; min-height: 44px; box-sizing: border-box; box-shadow: 0 3px 0 var(--c); }
+.chip .num { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  background: #eef2f6; border: 2px dashed #c3cedb; color: var(--ink); font-weight: 900; font-size: 14px; box-sizing: border-box; }
 .chip.on .num { background: #ffd400; border: none; box-shadow: 0 2px 0 #c9a600; }
 .cards { display: flex; flex-direction: column; gap: 8px; }
 .btn.card { font: 800 16px var(--font); line-height: 1.25; padding: 10px 14px; min-height: 48px; border: 3px solid var(--blue); border-radius: 18px;
@@ -149,7 +150,7 @@ canvas { display: block; }
 
 .pane-head { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 18px; }
 .round-btn { flex: none; width: 48px; height: 48px; border: none; border-radius: 50%; background: var(--card);
-  box-shadow: var(--shadow-lift); font: 800 18px var(--font); color: var(--ink); }
+  box-shadow: var(--shadow-lift); font: 800 20px/1 var(--font); color: var(--ink); }
 .segmented { display: flex; background: #e3eaf3; border-radius: 16px; padding: 4px; margin-bottom: 16px; }
 .segmented button { flex: 1; border: none; background: none; border-radius: 13px; min-height: 46px;
   font: 800 16px var(--font); color: var(--muted); }

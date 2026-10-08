@@ -103,8 +103,8 @@ function switchRow(parent: HTMLElement, title: string, sub: string, on: boolean,
 export function createUI(root: HTMLElement) {
   // Top: round back button and a pill with ‹ AUFGABE 2 VON 5 / title ›. Small, so the scene stays free.
   const top = el("div", "hud-top", root);
-  const menu = el("button", "round-btn", top, "‹");
-  menu.ariaLabel = "Zur Übersicht";
+  const menu = el("button", "round-btn", top, "☰");
+  menu.ariaLabel = "Menü";
   const pill = el("div", "task-pill", top);
   // Skip back and forth inside a level — kids want to retry one or peek at the next.
   const prev = el("button", "step-btn", pill, "‹");
@@ -293,7 +293,7 @@ export function createUI(root: HTMLElement) {
       const cta = el("button", "btn3d orange cta", foot, o.cta.label);
       cta.addEventListener("click", o.cta.go);
       const tabs = el("nav", "tabbar", foot);
-      const TABS = [["karte", "Karte"], ["spick", "Spickzettel"], ["settings", "Einstellungen"]] as const;
+      const TABS = [["karte", "Aufgaben"], ["spick", "Spickzettel"], ["settings", "Einstellungen"]] as const;
       const show = (t: typeof mapTab) => {
         mapTab = t;
         stopSpeaking();
@@ -370,7 +370,7 @@ export function createUI(root: HTMLElement) {
           const b = el("button", "btn3d orange wide", s, `Nächstes Level: ${o.next}`);
           b.addEventListener("click", () => ((afterClose = go.next), closeModal()));
         }
-      }, { icon: "", text: "Zur Karte", then: go.map, primary: false }, "full");
+      }, { icon: "", text: "Zu den Aufgaben", then: go.map, primary: false }, "full");
     },
 
     setView(mode: "bird" | "ego") {
