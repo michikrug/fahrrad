@@ -288,8 +288,12 @@ function updateSounds() {
   const level = new Map<Actor, number>();
   for (const r of sim?.runs ?? []) {
     if (r.a.d >= r.a.path.getLength()) continue;
+    const motor = r.a.p.kind === "car" || r.a.p.kind === "bus";
+    // Bikes and walkers go quiet once past the junction: from the bike, the camera rides along, so your
+    // own tyres never fade with distance and would hum on under the result sheet.
+    if (!motor && r.a.d > r.a.clear + 2) continue;
     if (r.started) level.set(r.a, 1);
-    else if (r.a.p.kind === "car" || r.a.p.kind === "bus") level.set(r.a, IDLE);
+    else if (motor) level.set(r.a, IDLE);
   }
   for (const [a, v] of voices) if (!level.has(a)) (v.stop(), voices.delete(a));
   for (const [a, k] of level) {
