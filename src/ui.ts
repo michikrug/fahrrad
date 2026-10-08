@@ -70,6 +70,10 @@ export interface MapLevel {
   hint?: string; // what is missing, on the first locked level only
 }
 
+// Answer cards in vehicle colours (BLUE, PURPLE, TEAL in content/scenarios.ts), like the order chips.
+// Not red/green — those mean wrong/right in the feedback — and not orange, that is "Du".
+const CARD_COLORS = ["#2f6fd6", "#8e44ad", "#16a3a3"];
+
 /**
  * Round ▶/■ read-aloud button, the same everywhere. Starting another one stops this one: speak()
  * cancels the running utterance, whose end event then resets this button to ▶.
@@ -441,6 +445,7 @@ export function createUI(root: HTMLElement) {
       choiceText = options.map((text, i) => `${letter(i)}: ${text}.`).join(" "); // full stops: a pause per option
       options.forEach((text, i) => {
         const b = el("button", "btn card", cards);
+        b.style.setProperty("--c", CARD_COLORS[i % CARD_COLORS.length]);
         el("span", "card-letter", b, letter(i));
         el("span", "", b, text);
         b.addEventListener("click", () => {
