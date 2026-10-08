@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import type { Layout, Participant } from "../types";
-import { ROAD_HALF, crossPath, lanePath } from "./roads";
+import { CURB, ROAD_HALF, crossPath, lanePath } from "./roads";
 
 export interface Actor {
   p: Participant;
@@ -271,8 +271,9 @@ export function buildActor(p: Participant, layout: Layout): Actor {
         );
   const color = colorOf(p);
   // Start just ahead of the vehicle, end a few metres after the junction. Each arrow a hair higher
-  // than the last so crossing arrows don't z-fight. Sits above sidewalk height for pedestrians.
-  const y = (p.kind === "pedestrian" ? 0.17 : 0.04) + (routeCount++ % 10) * 0.004;
+  // than the last so crossing arrows don't z-fight. All sit above sidewalk height: pedestrians walk
+  // there, and bikes turn so close to the curb that the arrowhead reaches over the corner.
+  const y = CURB + 0.02 + (routeCount++ % 10) * 0.004;
   const route = routeArrow(path, p.kind === "pedestrian" ? 0.4 : l / 2 + 0.3, Math.min(clear + 4, path.getLength()), color, y);
   const actor: Actor = { p, obj: model, path, clear, enter, route, color, pin, signal, d: 0, len: l, speed: SPEED[p.kind] };
   placeAt(actor, 0);
