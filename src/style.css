@@ -76,7 +76,7 @@ canvas { display: block; }
 .view-toggle button.on { background: var(--card); color: var(--blue); box-shadow: 0 2px 6px #16233f1f; }
 
 /* Feedback: round ✓/! badge sitting on the sheet's top edge, then text, pills and the big action. */
-.fb-sheet { position: relative; margin-top: 34px; padding-top: 44px; text-align: center; }
+.fb-sheet { position: relative; margin-top: 34px; padding-top: 56px; text-align: center; }
 .fb-badge { position: absolute; top: -34px; left: 50%; transform: translateX(-50%); width: 68px; height: 68px;
   border-radius: 50%; display: grid; place-items: center; font: 900 34px var(--font); color: #fff;
   background: var(--orange); border: 5px solid #fff; box-shadow: 0 4px 10px #0002; }
@@ -85,8 +85,9 @@ canvas { display: block; }
 /* Only the text scrolls: the badge sticks out of the sheet and the buttons must stay on screen. */
 .fb-sheet p { margin: 0 auto 12px; max-width: 34em; max-height: 30vh; overflow: auto; font-size: 16px; line-height: 1.45; color: #34425c; }
 .fb-pills { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
-.pill-btn { display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: 20px; background: var(--blue-soft);
-  color: var(--blue); font: 800 15px var(--font); padding: 0 16px; height: 42px; min-width: 130px; justify-content: center; }
+/* Secondary actions (Vorlesen, Regel ansehen): grey like Nochmal; fixed height so Vorlesen/Stopp doesn't jump. */
+.pill-btn { display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: 16px; background: var(--soft);
+  color: var(--ink); font: 800 16px var(--font); padding: 0 18px; height: 48px; min-width: 140px; justify-content: center; }
 .fb-actions { display: flex; gap: 10px; }
 .grow { flex: 1; }
 .round-soft { flex: none; width: 60px; min-height: 56px; border: none; border-radius: 18px; background: var(--soft);
@@ -221,7 +222,7 @@ canvas { display: block; }
 .modal.full .close { background: #ffffff26; color: #fff; }
 /* Lernkarte: same build as the feedback sheet — badge on the top edge (here white, holding the sign),
    centred text, pill, one big button. Not scrollable as a whole, or the badge would be clipped. */
-.modal.rule .sheet { position: relative; overflow: visible; max-height: none; margin-top: 46px; padding-top: 52px; text-align: center; }
+.modal.rule .sheet { position: relative; overflow: visible; max-height: none; margin-top: 46px; padding-top: 66px; text-align: center; }
 .modal.rule .sheet p { max-height: 34vh; overflow: auto; margin: 0 auto 6px; max-width: 34em; color: #34425c; }
 .modal.rule .source { margin: 0 auto 12px; }
 .modal.rule .close { background: var(--blue); color: #fff; box-shadow: 0 5px 0 var(--blue-d); margin-top: 4px; }
