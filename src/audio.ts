@@ -30,3 +30,30 @@ export function stopSpeaking() {
   // cancel() while idle delays the next speak() in Chrome, so only cancel when needed.
   if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
 }
+
+let audio: AudioContext | undefined;
+
+/**
+ * "Ring ring" of a bicycle bell, synthesised — no sound file.
+ * A bell is a few inharmonic partials with a fast attack and a long decay.
+ */
+export function ringBell() {
+  audio ??= new AudioContext();
+  const now = audio.currentTime;
+  const out = audio.createGain();
+  out.gain.value = 0.25;
+  out.connect(audio.destination);
+  for (const strike of [0, 0.18]) {
+    for (const [ratio, level] of [[1, 1], [2.76, 0.5], [5.4, 0.25]] as const) {
+      const osc = audio.createOscillator();
+      const env = audio.createGain();
+      osc.frequency.value = 2200 * ratio;
+      env.gain.setValueAtTime(0, now + strike);
+      env.gain.linearRampToValueAtTime(level, now + strike + 0.005);
+      env.gain.exponentialRampToValueAtTime(0.001, now + strike + 1.2 / ratio);
+      osc.connect(env).connect(out);
+      osc.start(now + strike);
+      osc.stop(now + strike + 1.3);
+    }
+  }
+}

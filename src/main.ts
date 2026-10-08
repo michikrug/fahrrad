@@ -1,8 +1,10 @@
 import * as THREE from "three";
+import { ringBell } from "./audio";
+import { createCameraRig } from "./camera";
 import { firstMistake, isCorrect } from "./check";
 import { scenarios } from "./content/scenarios";
 import { clearTime, listenForTaps, nearMissDist, nearMissSchedule, schedule, type Run } from "./play";
-import { buildActor, placeAt, type Actor } from "./scene/actors";
+import { buildActor, placeAt, updateSignal, type Actor } from "./scene/actors";
 import type { LightControl } from "./scene/lights";
 import { ARMS } from "./scene/roads";
 import { buildLevel, createWorld, disposeTree } from "./scene/world";
@@ -12,6 +14,7 @@ import { createUI } from "./ui";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 const world = createWorld(app);
 const ui = createUI(app);
+const rig = createCameraRig(world);
 
 // ?s=2 jumps to a scenario — handy for testing on the tablet.
 let index = Math.min(Number(new URLSearchParams(location.search).get("s")) || 0, scenarios.length - 1);
@@ -19,6 +22,7 @@ let level = new THREE.Group();
 let actors: Actor[] = [];
 let tapped: string[] = [];
 let lights = new Map<Arm, LightControl>();
+let clock = 0; // drives blinkers even while nobody moves
 
 /** Running drive animation. `pair` is watched for the near-miss freeze. */
 let sim: {
@@ -29,6 +33,8 @@ let sim: {
   done: ((nearMiss: boolean) => void) | null;
 } | null = null;
 
+const current = () => scenarios[index];
+
 function load(i: number) {
   disposeTree(level);
   const s = scenarios[i];
@@ -36,23 +42,53 @@ function load(i: number) {
   actors = s.participants.map((p) => buildActor(p, s.layout));
   for (const a of actors) level.add(a.obj, a.route);
   world.scene.add(level);
-  world.resetCamera(s.layout.roundabout);
+  rig.setRider(actors.find((a) => a.p.kind === "player") ?? null);
+  // Frame everyone where they wait (lights/zebras push them further out), plus a little air.
+  const radius = Math.max(10, ...actors.map((a) => a.obj.position.length() + a.len / 2)) + 1.5;
+  rig.snap(s.view ?? "bird", radius);
+  ui.setView(rig.mode);
   reset();
-  ui.showScenario(s.title, "Wer darf zuerst fahren? Tippe alle in der richtigen Reihenfolge an.");
+  ui.showScenario(s.title, s.choice?.question ?? "Wer darf zuerst? Tippe alle der Reihe nach an.");
+  ui.showChips(s.choice ? [] : actors.map(chipFor), pick);
+  if (s.choice) askChoice();
+}
+
+// No emoji on purpose: 🚗 is always red, which confuses next to a blue car. The chip colour does the matching.
+const NAME = { car: "Auto", bus: "Bus", bike: "Rad", player: "Du", pedestrian: "Fußgänger" } as const;
+const chipFor = (a: Actor) => ({
+  id: a.p.id,
+  label: NAME[a.p.kind],
+  color: `#${a.color.toString(16).padStart(6, "0")}`,
+});
+
+/** One pick, from a chip or a tap in the scene. */
+function pick(id: string) {
+  if (current().choice || tapped.length === actors.length) return; // no order question / answer given
+  // Picking the last one again takes it back — kids mis-tap a lot.
+  if (tapped.at(-1) === id) tapped.pop();
+  else if (!tapped.includes(id)) tapped.push(id);
+  renderPins();
+  if (tapped.length === actors.length) drive();
+}
+
+function askChoice() {
+  const s = current();
+  ui.showChoice(s.choice!.options, (i) => ui.showResult(i === s.choice!.correct, s.explain));
 }
 
 function reset() {
   sim = null;
-  const s = scenarios[index];
+  const s = current();
   for (const [arm, l] of lights) {
     const spec = s.layout.arms[arm]!.light!;
     l.car(spec.car);
     if (spec.ped) l.ped(spec.ped);
   }
   tapped = [];
-  for (const a of actors) placeAt(a, 0), (a.route.visible = true);
+  for (const a of actors) placeAt(a, 0), (a.route.visible = !s.hideRoutes);
   renderPins();
   ui.hideResult();
+  if (s.choice) askChoice();
 }
 
 function renderPins() {
@@ -60,15 +96,21 @@ function renderPins() {
     const n = tapped.indexOf(a.p.id);
     a.pin.textContent = n < 0 ? "" : String(n + 1);
     a.pin.classList.toggle("on", n >= 0);
+    if (a.p.kind === "player") {
+      rig.pin.textContent = a.pin.textContent;
+      rig.pin.className = a.pin.className;
+    }
   }
+  ui.setChipNumbers(tapped);
 }
 
 function drive() {
-  const s = scenarios[index];
+  const s = current();
+  const answer = s.answer!;
   const byId = new Map(actors.map((a) => [a.p.id, a]));
-  const ok = isCorrect(s.answer, tapped);
+  const ok = isCorrect(answer, tapped);
   const showResult = () => ui.showResult(ok, s.explain);
-  const mistake = ok ? null : firstMistake(s.answer, tapped);
+  const mistake = ok ? null : firstMistake(answer, tapped);
   const near = mistake && nearMissSchedule(byId, tapped, mistake.index, mistake.expected[0]);
   if (near) {
     sim = { runs: near.runs, t: 0, pair: near.pair, done: (nearMiss) => {
@@ -78,7 +120,7 @@ function drive() {
     } };
   } else {
     // Correct: drive as the solution groups say (simultaneous where allowed). Wrong without conflict: as tapped.
-    const groups = ok ? s.answer : tapped.map((id) => [id]);
+    const groups = ok ? answer : tapped.map((id) => [id]);
     sim = { runs: schedule(groups.map((g) => g.map((id) => byId.get(id)!))).runs, t: 0, done: showResult };
   }
 }
@@ -103,7 +145,7 @@ function switchLightsFor(a: Actor) {
   }
 }
 
-world.onFrame((dt) => {
+function stepSim(dt: number) {
   if (!sim) return;
   sim.t += dt;
   for (const r of sim.runs) {
@@ -125,17 +167,25 @@ world.onFrame((dt) => {
     sim.done(false);
     sim.done = null;
   }
+}
+
+// Order matters: move actors first, then the camera follows the (possibly moved) bike.
+world.onFrame((dt) => {
+  stepSim(dt);
+  clock += dt;
+  for (const a of actors) updateSignal(a, clock, !!current().layout.roundabout);
+  rig.update(dt);
 });
 
-listenForTaps(world.renderer.domElement, world.camera, () => actors.map((a) => a.obj), (id) => {
-  if (tapped.length === actors.length) return; // answer already given
-  // Tapping the last one again takes it back — kids mis-tap a lot.
-  if (tapped.at(-1) === id) tapped.pop();
-  else if (!tapped.includes(id)) tapped.push(id);
-  renderPins();
-  if (tapped.length === actors.length) drive();
+listenForTaps(world.renderer.domElement, world.camera, () => [...actors.map((a) => a.obj), ...rig.targets()], (id) => {
+  if (id === "bell") return ringBell();
+  pick(id);
 });
 
+ui.onView(() => {
+  rig.toggle();
+  ui.setView(rig.mode);
+});
 ui.onReset(reset);
 ui.onNext(() => {
   index = (index + 1) % scenarios.length;
@@ -143,3 +193,6 @@ ui.onNext(() => {
 });
 
 load(index);
+
+// Dev only: lets headless tests inspect state from the console.
+if (import.meta.env.DEV) Object.assign(window, { world, rig });

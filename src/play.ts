@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { Actor } from "./scene/actors";
 
 /**
- * Calls `cb` with the tapped actor id. A tap must be short and nearly still —
+ * Calls `cb` with the tapped actor id (or "bell" for the handlebar bell). A tap must be short and nearly still —
  * otherwise kids rotating the camera would select vehicles by accident.
  */
 export function listenForTaps(
@@ -31,7 +31,10 @@ export function listenForTaps(
     const r = dom.getBoundingClientRect();
     const ndc = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    const hit = ray.intersectObjects(targets(), true).find((h) => h.object.userData.actorId);
+    const hits = ray.intersectObjects(targets(), true);
+    // The bell sits inside the handlebar's "yourself" hit box, so it wins regardless of distance.
+    if (hits.some((h) => h.object.userData.bell)) return cb("bell");
+    const hit = hits.find((h) => h.object.userData.actorId);
     if (hit) cb(hit.object.userData.actorId);
   };
   dom.addEventListener("pointerup", end);

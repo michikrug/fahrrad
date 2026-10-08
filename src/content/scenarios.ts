@@ -153,4 +153,48 @@ export const scenarios: Scenario[] = [
     explain:
       "Wer schon im Kreisverkehr fährt, hat Vorfahrt. Das zeigen die beiden Schilder an der Einfahrt. Du wartest, bis das blaue Auto vorbei ist.",
   },
+  // --- P4 demos: ego view, choice questions, no route arrows. Reviewed in P5. ---
+  {
+    id: "oneway-1",
+    title: "Einbahnstraße",
+    view: "ego",
+    layout: { arms: { N: { oneway: true, exitSigns: ["267", "1022-10"] }, S: {}, E: {}, W: {} } },
+    participants: [{ id: "you", kind: "player", arm: "S", move: "straight" }],
+    choice: {
+      question: "Du willst geradeaus in die Straße vor dir fahren. Darfst du das?",
+      options: ["Ja, Radfahrer dürfen hier hineinfahren.", "Nein, hier darf niemand hinein."],
+      correct: 0,
+    },
+    explain:
+      "Das rote Schild mit dem weißen Balken heißt: Hier darf niemand hineinfahren. Aber das kleine Schild darunter mit dem Fahrrad sagt: Radfahrer frei! Du darfst also fahren, musst aber auf entgegenkommende Autos achten.",
+  },
+  {
+    id: "round-2",
+    title: "Raus aus dem Kreisel",
+    layout: {
+      roundabout: true,
+      arms: Object.fromEntries((["N", "E", "S", "W"] as const).map((a) => [a, { signs: ["215", "205"] }])),
+    },
+    participants: [{ id: "you", kind: "player", arm: "S", move: "straight" }],
+    choice: {
+      question: "Du willst den Kreisverkehr gleich wieder verlassen. Was machst du?",
+      options: ["Rechten Arm ausstrecken", "Linken Arm ausstrecken", "Gar nichts"],
+      correct: 0,
+    },
+    explain:
+      "Beim Hineinfahren in den Kreisverkehr gibst du kein Zeichen. Beim Hinausfahren zeigst du mit dem rechten Arm an, dass du abbiegst.",
+  },
+  {
+    id: "blink-1",
+    title: "Blinker lesen",
+    hideRoutes: true,
+    layout: { arms: { N: {}, E: {}, S: {}, W: {} } },
+    participants: [
+      { id: "you", kind: "player", arm: "S", move: "straight" },
+      { id: "car", kind: "car", arm: "N", move: "left", color: 0x2f9e5a },
+    ],
+    answer: [["you"], ["car"]],
+    explain:
+      "Schau auf den Blinker: Das grüne Auto blinkt links. Es will abbiegen und muss dich als Gegenverkehr zuerst durchlassen.",
+  },
 ];

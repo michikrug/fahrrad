@@ -41,6 +41,8 @@ export interface Lane {
   path: THREE.Curve<THREE.Vector3>;
   /** Distance along the path after which the junction is left behind. */
   clear: number;
+  /** Roundabout: distance at which the ring is entered (0 if already on it). */
+  enter?: number;
 }
 
 /**
@@ -67,7 +69,7 @@ export function lanePath(layout: Layout, from: Arm, move: Move, offset: number, 
     for (let a = a0; a > a1; a -= 0.2) pts.push(new THREE.Vector3(R * Math.cos(a), 0, R * Math.sin(a)));
     pts.push(Q(edge + 1), Q(edge + 6), Q(ARM_LEN));
     const path = new THREE.CatmullRomCurve3(pts, false, "centripetal");
-    return { path, clear: path.getLength() - (ARM_LEN - edge - 1) };
+    return { path, clear: path.getLength() - (ARM_LEN - edge - 1), enter: inRing ? 0 : wait - edge };
   }
 
   const edgeIn = P(edge);

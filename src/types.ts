@@ -40,12 +40,24 @@ export interface Layout {
   priority?: [Arm, Arm];
 }
 
+export interface Choice {
+  question: string;
+  options: string[];
+  correct: number; // index into options
+}
+
 export interface Scenario {
   id: string;
   title: string;
   layout: Layout;
   participants: Participant[];
-  answer: Groups;
+  /** Exactly one of `answer` (tap in order) or `choice` (pick a card). */
+  answer?: Groups;
+  choice?: Choice;
+  /** Start in the bike's own view instead of from above. */
+  view?: "ego";
+  /** Higher levels: no route arrows, kids must read blinkers and hand signals. */
+  hideRoutes?: boolean;
   /** Shown after answering — kid-friendly German. */
   explain: string;
 }

@@ -27,7 +27,7 @@ export function createWorld(container: HTMLElement) {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.minDistance = 12;
-  controls.maxDistance = 70;
+  controls.maxDistance = 110; // phones in portrait need to back off far to see the whole junction
   controls.maxPolarAngle = Math.PI / 2.3; // never dip below the ground
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x7a9a60, 1.6));
@@ -56,23 +56,20 @@ export function createWorld(container: HTMLElement) {
   addEventListener("resize", resize);
   resize();
 
-  const clock = new THREE.Clock();
-  renderer.setAnimationLoop(() => {
-    const dt = Math.min(clock.getDelta(), 0.1);
+  const timer = new THREE.Timer();
+  timer.connect(document); // pauses while the tab is hidden, so nothing jumps on return
+  renderer.setAnimationLoop((now) => {
+    timer.update(now);
+    // Clamp both ways: the first rAF timestamp can precede the timer's start, giving a negative delta.
+    const dt = THREE.MathUtils.clamp(timer.getDelta(), 0, 0.1);
     for (const f of frameHooks) f(dt);
-    controls.update();
+    // update() calls lookAt(target), which would fight the ego view and camera tweens.
+    if (controls.enabled) controls.update();
     renderer.render(scene, camera);
     labels.render(scene, camera);
   });
 
-  /** Back to the default oblique view; bigger junctions (roundabout) need more distance. */
-  function resetCamera(far = false) {
-    camera.position.set(0, far ? 30 : 22, far ? 40 : 30);
-    controls.target.set(0, 0, 0);
-  }
-  resetCamera();
-
-  return { renderer, scene, camera, controls, resetCamera, onFrame: (f: (dt: number) => void) => frameHooks.push(f) };
+  return { renderer, scene, camera, controls, onFrame: (f: (dt: number) => void) => frameHooks.push(f) };
 }
 
 export type World = ReturnType<typeof createWorld>;
