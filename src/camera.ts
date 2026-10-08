@@ -1,12 +1,16 @@
 import * as THREE from "three";
-import { tube, type Actor } from "./scene/actors";
+import { BAR, type Actor } from "./scene/actors";
 import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import type { World } from "./scene/world";
 
 // Two views: free bird's-eye (OrbitControls) and the kid's own view from the bike.
 // Switching tweens position, rotation and field of view so kids don't lose orientation.
 
-const EYE = 2.0; // metres; bike models are scaled 1.4×, so the rider's head is ~2.2 m up
+// Eye in bike model space. A bit lower and further back than the model's head (y 1.58, z 0.02):
+// at true head position the bar sits so low on a portrait phone that the dock covers it.
+const EYE = new THREE.Vector3(0, 1.32, -0.25);
+/** World position of the eye. Not localToWorld: matrixWorld is a frame old while the bike moves. */
+const eyeOf = (o: THREE.Object3D) => EYE.clone().multiply(o.scale).applyQuaternion(o.quaternion).add(o.position);
 const BIRD_FOV = 50;
 const BIRD_ELEVATION = THREE.MathUtils.degToRad(58); // steeper than 45° — portrait screens have height to spare
 
@@ -20,76 +24,49 @@ function egoFov(aspect: number) {
 }
 const TWEEN_S = 0.9;
 
-function handlebar() {
+/**
+ * Ego-only extras at the handlebar of your own bike: bell, a tap target for "yourself" and your pin.
+ * Built in bike model space (faces +z, driver's right is -x) and scaled like the model.
+ */
+function handlebarExtras() {
   const g = new THREE.Group();
-  const steel = new THREE.MeshLambertMaterial({ color: 0x9aa3ab });
-  const grip = new THREE.MeshLambertMaterial({ color: 0x222222 });
-  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.62, 10).rotateZ(Math.PI / 2), steel);
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.3, 10), steel);
-  stem.position.set(0, -0.15, -0.04);
-  g.add(bar, stem);
-  for (const x of [-0.27, 0.27]) {
-    const gr = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.12, 10).rotateZ(Math.PI / 2), grip);
-    gr.position.x = x;
-    g.add(gr);
-  }
+  g.position.copy(BAR);
   // Bell on the right side of the bar, where kids' thumbs are.
   const bell = new THREE.Mesh(
-    new THREE.SphereGeometry(0.045, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.SphereGeometry(0.035, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
     new THREE.MeshLambertMaterial({ color: 0xd8dde2, emissive: 0x222222 }),
   );
-  bell.position.set(0.16, 0.02, 0);
+  bell.position.set(-0.13, 0.025, 0);
   // Invisible, bigger hit sphere: the bell is tiny on screen.
-  const hit = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6));
+  const hit = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6));
   hit.visible = false;
   hit.userData.bell = true;
   bell.add(hit);
-  g.add(bell);
-  // Tapping the handlebar = tapping yourself (your own bike is hidden in this view).
-  const self = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.25, 0.3));
+  // Tapping the handlebar = tapping yourself (your body is hidden in this view).
+  const self = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.18, 0.22));
   self.visible = false;
-  g.add(self);
-  // Order number for yourself, shown above the bar since your bike's own pin is hidden.
+  // Order number for yourself, above the bar since the pin over your head is out of sight.
   const pin = document.createElement("div");
   pin.className = "pin";
   const label = new CSS2DObject(pin);
-  label.position.set(-0.12, 0.09, 0);
-  g.add(label);
-  // Built with the bell on +x for a viewer looking along -z; the bike faces +z, so turn it round.
-  g.rotation.y = Math.PI;
-  // Low and far enough ahead that the whole bar fits a narrow portrait view.
-  g.position.set(0, EYE - 0.5, 0.75);
-  return { g, bell, self, pin };
-}
-
-/**
- * What you see of your own bike below the bar: head tube and fork down to the front wheel —
- * without it the stem ends in mid-air. (A top tube was tried: it runs towards the eye and looks like a pillar.) Bike frame: faces +z,
- * matches the 1.4× scaled bike model (front hub at z≈0.77, y≈0.53).
- */
-function frontOfBike(barPos: THREE.Vector3) {
-  const g = new THREE.Group();
-  const frame = new THREE.MeshLambertMaterial({ color: 0xd33f3f }); // same red as the bike model
-  const tyre = new THREE.MeshLambertMaterial({ color: 0x222222 });
-  const hub = new THREE.Vector3(0, 0.53, barPos.z + 0.05);
-  const headTop = barPos.clone().setY(barPos.y - 0.12);
-  for (const x of [-0.05, 0.05]) g.add(tube(headTop.clone().setX(x), hub.clone().setX(x), 0.022, frame)); // fork legs
-  g.add(tube(headTop, headTop.clone().setY(headTop.y - 0.25), 0.035, frame)); // head tube
-  const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.06, 8, 32).rotateY(Math.PI / 2), tyre);
-  wheel.position.copy(hub);
-  g.add(wheel);
-  return g;
+  label.position.set(0.09, 0.07, 0);
+  g.add(bell, self, label);
+  return { g, self, pin };
 }
 
 export function createCameraRig(world: World) {
   const { camera, controls, scene } = world;
+  // The ego view shows your own bike model (minus your body), so it matches the bird's-eye view.
   // The handlebar belongs to the bike, not the head: it stays put while the view turns
   // (look over your shoulder and it leaves the picture, like in real life).
-  const bar = handlebar();
+  // The extras live in their own group, not in the bike: the bird view taps the bike, and the
+  // raycaster ignores `visible`, so a bell inside it would ring instead of picking you.
+  const bar = handlebarExtras();
   const mount = new THREE.Group();
   mount.visible = false;
-  mount.add(bar.g, frontOfBike(bar.g.position));
+  mount.add(bar.g);
   scene.add(mount);
+  let body: THREE.Object3D[] = [];
 
   let mode: "bird" | "ego" = "bird";
   let rider: Actor | null = null;
@@ -125,7 +102,7 @@ export function createCameraRig(world: World) {
   const tilt = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -0.3);
   function egoPose() {
     const a = rider!;
-    const pos = a.obj.position.clone().setY(a.obj.position.y + EYE);
+    const pos = eyeOf(a.obj);
     // Models face +z, cameras look along -z: turn around, then look-around yaw, then a slight downward tilt.
     const look = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
     const quat = a.obj.quaternion.clone().multiply(turnAround).multiply(look).multiply(tilt);
@@ -159,6 +136,8 @@ export function createCameraRig(world: World) {
     setRider(a: Actor | null) {
       rider = a;
       bar.self.userData.actorId = a?.p.id;
+      body = [];
+      a?.obj.traverse((o) => o.userData.rider && body.push(o));
       if (!a && mode === "ego") this.toggle();
     },
     toggle() {
@@ -203,15 +182,17 @@ export function createCameraRig(world: World) {
       }
       camera.fov = THREE.MathUtils.lerp(from.fov, fov(mode), k);
       camera.updateProjectionMatrix();
-      // Swap the rider model for the handlebar by camera distance to the rider's head, not by tween
-      // progress — otherwise flying out of ego view shows the rider while the camera is still inside it.
-      const head = rider ? rider.obj.position.clone().setY(rider.obj.position.y + EYE) : null;
+      // Hide your body by camera distance to your head, not by tween progress — otherwise
+      // flying out of ego view shows the rider while the camera is still inside it.
+      const head = rider ? eyeOf(rider.obj) : null;
       const inEgo = !!head && camera.position.distanceTo(head) < 2.5;
       mount.visible = inEgo;
+      // Resting arms are left alone outside ego view: updateSignal decides whether they show.
+      for (const o of body) if (inEgo || !o.userData.rest) o.visible = !inEgo;
       if (rider) {
-        rider.obj.visible = !inEgo;
         mount.position.copy(rider.obj.position);
         mount.quaternion.copy(rider.obj.quaternion);
+        mount.scale.copy(rider.obj.scale);
       }
     },
   };

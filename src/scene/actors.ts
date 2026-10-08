@@ -83,22 +83,25 @@ export function tube(a: THREE.Vector3, b: THREE.Vector3, r: number, m: THREE.Mat
   return mesh;
 }
 
+/** Handlebar centre in bike model space — the ego view hangs the bell and your pin there. */
+export const BAR = new THREE.Vector3(0, 0.98, 0.36);
+
 /**
  * Kid on a bike, built to read from above: the wide handlebar with both arms reaching for it,
  * knees and saddle give the typical bike-and-rider silhouette that a box and a ball didn't.
- * Faces +z; the driver's left is +x.
+ * Faces +z; the driver's left is +x. The ego view shows this same model with the `rider` parts hidden.
  */
 function bike(shirt: number, helmet: number) {
   const g = new THREE.Group();
   const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
-  const frame = lambert(0xd33f3f); // same red as the ego view's fork in camera.ts
+  const frame = lambert(0xd33f3f);
   const steel = lambert(0x9aa3ab);
   const top = lambert(shirt);
   const trousers = lambert(0x2e3a59);
 
   const wheel = new THREE.TorusGeometry(0.33, 0.06, 6, 20).rotateY(Math.PI / 2);
   // Mudguards in frame colour: from above, the black tyres vanish on asphalt — the red stripes don't.
-  const guard = new THREE.TorusGeometry(0.41, 0.025, 4, 12, 1.6).rotateZ(Math.PI / 2 - 0.8).rotateY(Math.PI / 2).scale(2.4, 1, 1);
+  const guard = new THREE.TorusGeometry(0.41, 0.025, 4, 12, 1.6).rotateZ(Math.PI / 2 - 0.8).rotateY(Math.PI / 2).scale(1.6, 1, 1);
   for (const z of [-0.55, 0.55]) {
     const w = new THREE.Mesh(wheel, black);
     w.position.set(0, 0.38, z);
@@ -108,7 +111,7 @@ function bike(shirt: number, helmet: number) {
   }
   // Front lamp and rear reflector (a road-safe bike has both) — also show which way the bike faces.
   g.add(box(0.12, 0.1, 0.08, lambert(0xfff6c0), 0, 0.62, 0.5), box(0.12, 0.08, 0.04, lambert(0xe02020), 0, 0.72, -0.62));
-  // Diamond frame and fork. Wheel hubs stay at z ±0.55 — camera.ts draws the ego view's front wheel there.
+  // Diamond frame and fork.
   const rearHub = v(0, 0.38, -0.55), crank = v(0, 0.36, -0.05), seat = v(0, 0.84, -0.2);
   const headTop = v(0, 0.86, 0.36), headLow = v(0, 0.7, 0.4), frontHub = v(0, 0.38, 0.55);
   for (const [a, b] of [[rearHub, crank], [rearHub, seat], [crank, seat], [crank, headLow], [seat, headTop], [headLow, headTop]])
@@ -117,30 +120,35 @@ function bike(shirt: number, helmet: number) {
   g.add(box(0.14, 0.05, 0.28, black, 0, 0.88, -0.22)); // saddle
 
   // Handlebar: stem plus a wide bar with grips — the clearest "bike" cue from above.
-  const bar = v(0, 0.98, 0.36);
-  g.add(tube(headTop, bar, 0.03, steel), box(0.66, 0.05, 0.05, steel, 0, bar.y, bar.z));
-  for (const x of [-0.29, 0.29]) g.add(box(0.1, 0.07, 0.07, black, x, bar.y, bar.z));
+  const bar = BAR;
+  g.add(tube(headTop, bar, 0.03, steel), tube(bar.clone().setX(-0.31), bar.clone().setX(0.31), 0.022, steel));
+  for (const x of [-0.27, 0.27]) g.add(tube(bar.clone().setX(x - 0.05), bar.clone().setX(x + 0.05), 0.032, black));
 
-  // Rider: legs to the pedals, torso leaning forward, head with helmet.
+  // Rider: legs to the pedals, torso leaning forward, head with helmet. Tagged `rider`: the ego
+  // camera sits inside them, so they hide there. Arms on the grips too: from the shoulder they
+  // fill a corner of the screen. The outstretched signal arm stays — a Schulterblick shows it.
+  const body: THREE.Object3D[] = [];
   for (const x of [-0.11, 0.11]) {
     const hip = v(x, 0.95, -0.17), knee = v(x * 1.8, 0.82, 0.14), pedal = v(x * 1.3, 0.38, 0); // knees out: visible from above
-    g.add(tube(hip, knee, 0.065, trousers), tube(knee, pedal, 0.055, trousers));
+    body.push(tube(hip, knee, 0.065, trousers), tube(knee, pedal, 0.055, trousers));
   }
   const torso = box(0.32, 0.46, 0.22, top, 0, 1.2, -0.1); // slim, so the bar stays visible from behind
   torso.rotation.x = 0.35;
-  g.add(torso);
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 8), lambert(0xf1c27d));
   head.position.set(0, 1.58, 0.02);
   const hat = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), lambert(helmet));
   hat.position.set(0, 1.61, 0.02);
-  g.add(head, hat);
+  body.push(torso, head, hat);
+  for (const o of body) o.userData.rider = true;
+  g.add(...body);
 
   // Arms: on the grips while riding; the signalling arm swaps for one stretched out sideways.
   const arms = { left: [] as THREE.Object3D[], right: [] as THREE.Object3D[] };
   for (const [side, x] of [["left", 1], ["right", -1]] as const) {
     const shoulder = v(x * 0.17, 1.36, 0.0);
-    const rest = tube(shoulder, v(x * 0.29, bar.y + 0.04, bar.z), 0.05, top);
+    const rest = tube(shoulder, v(x * 0.27, bar.y + 0.03, bar.z), 0.05, top);
     rest.userData.rest = true; // shown unless this side signals
+    rest.userData.rider = true;
     const out = box(0.6, 0.11, 0.11, top, x * 0.5, shoulder.y, shoulder.z);
     out.visible = false;
     g.add(rest, out);
@@ -238,6 +246,7 @@ export function buildActor(p: Participant, layout: Layout): Actor {
   // Local units: bike models are scaled 1.4×, so their label sits lower in model space.
   // Bikes: high enough that the label doesn't cover the rider in the oblique bird view.
   label.position.y = p.kind === "bus" ? 4.2 : isBike ? 2.4 : p.kind === "pedestrian" ? 1.9 : 2.6;
+  label.userData.rider = true; // ego view: your own pin moves to the handlebar
   model.add(label);
 
   let signal: Actor["signal"] = model.userData.signal ?? { left: [], right: [] };
