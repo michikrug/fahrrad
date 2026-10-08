@@ -99,7 +99,7 @@ export type MoverKind = "car" | "bus" | "bike" | "pedestrian";
 export interface Voice {
   /** `gain` 0..1 (distance), `pan` -1 (left) .. 1 (right). */
   set(gain: number, pan: number): void;
-  stop(): void;
+  stop(now?: boolean): void;
 }
 
 /** Looping sound of one moving road user, until stop(). */
@@ -148,9 +148,10 @@ export function moverSound(kind: MoverKind): Voice {
       vol.gain.setTargetAtTime(g * level, c.currentTime, 0.05);
       pan.pan.setTargetAtTime(p, c.currentTime, 0.05);
     },
-    stop() {
-      vol.gain.setTargetAtTime(0, c.currentTime, 0.05);
-      for (const s of sources) s.stop(c.currentTime + 0.3);
+    /** `now`: cut off at once (near miss, so the horn stands alone) instead of a short fade. */
+    stop(now = false) {
+      vol.gain.setTargetAtTime(0, c.currentTime, now ? 0.005 : 0.05);
+      for (const s of sources) s.stop(c.currentTime + (now ? 0.03 : 0.3));
     },
   };
 }
@@ -160,7 +161,7 @@ export function nearMissSound(horn: boolean) {
   if (!horn) return ringBell();
   const { c, out: dest } = out();
   const now = c.currentTime;
-  // Car horn: two square tones a third apart, slightly muffled.
+  // Car horn: one muffled square tone. Two tones a third apart beat into a buzz that sounded like a second noise.
   const h = c.createGain();
   h.gain.setValueAtTime(0, now);
   h.gain.linearRampToValueAtTime(0.12, now + 0.02);
@@ -170,14 +171,12 @@ export function nearMissSound(horn: boolean) {
   lp.type = "lowpass";
   lp.frequency.value = 1800;
   lp.connect(h).connect(dest);
-  for (const f of [349, 440]) {
-    const o = c.createOscillator();
-    o.type = "square";
-    o.frequency.value = f;
-    o.connect(lp);
-    o.start(now);
-    o.stop(now + 0.6);
-  }
+  const o = c.createOscillator();
+  o.type = "square";
+  o.frequency.value = 415;
+  o.connect(lp);
+  o.start(now);
+  o.stop(now + 0.6);
 }
 
 /**

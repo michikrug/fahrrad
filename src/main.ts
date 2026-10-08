@@ -230,6 +230,8 @@ function stepSim(dt: number) {
   }
   const [x, y] = sim.pair ?? [];
   if (x && y && sim.at && isNearMiss(x, y, sim.at)) {
+    for (const v of voices.values()) v.stop(true);
+    voices.clear();
     nearMissSound([x, y].some((a) => a.p.kind === "car" || a.p.kind === "bus"));
     sim.done?.(true);
     sim = null; // freeze in place
