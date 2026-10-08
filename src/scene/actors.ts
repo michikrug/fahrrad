@@ -110,7 +110,8 @@ function bike(shirt: number, helmet: number) {
     g.add(w, m);
   }
   // Front lamp and rear reflector (a road-safe bike has both) — also show which way the bike faces.
-  g.add(box(0.12, 0.1, 0.08, lambert(0xfff6c0), 0, 0.62, 0.5), box(0.12, 0.08, 0.04, lambert(0xe02020), 0, 0.72, -0.62));
+  // Lamp on the handlebar, reflector behind the saddle: lower down they would sit inside the wheels.
+  g.add(box(0.12, 0.1, 0.08, lambert(0xfff6c0), 0, 0.93, 0.45), box(0.12, 0.08, 0.04, lambert(0xe02020), 0, 0.82, -0.38));
   // Diamond frame and fork.
   const rearHub = v(0, 0.38, -0.55), crank = v(0, 0.36, -0.05), seat = v(0, 0.84, -0.2);
   const headTop = v(0, 0.86, 0.36), headLow = v(0, 0.7, 0.4), frontHub = v(0, 0.38, 0.55);
