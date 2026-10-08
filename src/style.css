@@ -184,8 +184,9 @@ canvas { display: block; }
 .info-name strong { font: 800 16px var(--font); }
 .info-name p, .info-card > p { margin: 4px 0 0; font-size: 15px; line-height: 1.45; color: #34425c; }
 .info-card > p { margin-top: 10px; }
+/* No 3D bottom edge here: on a small circle it reads as an egg. */
 .speak { flex: none; width: 46px; height: 46px; border: none; border-radius: 50%; background: var(--blue); color: #fff;
-  font-size: 16px; padding: 0 0 0 3px; box-shadow: 0 3px 0 var(--blue-d); }
+  font-size: 16px; padding: 0 0 0 3px; box-shadow: 0 2px 6px #2563d955; }
 
 .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--card);
   border: none; border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 14px;
