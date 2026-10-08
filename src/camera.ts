@@ -187,8 +187,8 @@ export function createCameraRig(world: World) {
       const head = rider ? eyeOf(rider.obj) : null;
       const inEgo = !!head && camera.position.distanceTo(head) < 2.5;
       mount.visible = inEgo;
-      // Resting arms are left alone outside ego view: updateSignal decides whether they show.
-      for (const o of body) if (inEgo || !o.userData.rest) o.visible = !inEgo;
+      // Arms are left alone outside ego view: updateSignal decides which one shows.
+      for (const o of body) if (inEgo || !o.userData.arm) o.visible = !inEgo;
       if (rider) {
         mount.position.copy(rider.obj.position);
         mount.quaternion.copy(rider.obj.quaternion);

@@ -125,8 +125,8 @@ function bike(shirt: number, helmet: number) {
   for (const x of [-0.27, 0.27]) g.add(tube(bar.clone().setX(x - 0.05), bar.clone().setX(x + 0.05), 0.032, black));
 
   // Rider: legs to the pedals, torso leaning forward, head with helmet. Tagged `rider`: the ego
-  // camera sits inside them, so they hide there. Arms on the grips too: from the shoulder they
-  // fill a corner of the screen. The outstretched signal arm stays — a Schulterblick shows it.
+  // camera sits inside them, so they hide there. Both arms too: they start right next to the
+  // camera, so on the grips they fill a screen corner and stretched out they hide whoever is beside you.
   const body: THREE.Object3D[] = [];
   for (const x of [-0.11, 0.11]) {
     const hip = v(x, 0.95, -0.17), knee = v(x * 1.8, 0.82, 0.14), pedal = v(x * 1.3, 0.38, 0); // knees out: visible from above
@@ -148,9 +148,9 @@ function bike(shirt: number, helmet: number) {
     const shoulder = v(x * 0.17, 1.36, 0.0);
     const rest = tube(shoulder, v(x * 0.27, bar.y + 0.03, bar.z), 0.05, top);
     rest.userData.rest = true; // shown unless this side signals
-    rest.userData.rider = true;
     const out = box(0.6, 0.11, 0.11, top, x * 0.5, shoulder.y, shoulder.z);
     out.visible = false;
+    for (const a of [rest, out]) a.userData.rider = a.userData.arm = true;
     g.add(rest, out);
     arms[side].push(rest, out);
   }
