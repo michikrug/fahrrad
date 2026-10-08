@@ -103,7 +103,9 @@ function switchRow(parent: HTMLElement, title: string, sub: string, on: boolean,
 export function createUI(root: HTMLElement) {
   // Top: round back button and a pill with ‹ AUFGABE 2 VON 5 / title ›. Small, so the scene stays free.
   const top = el("div", "hud-top", root);
-  const menu = el("button", "round-btn", top, "☰");
+  // Burger as SVG: the ☰ glyph sits off-centre (font baseline and side bearings differ per platform).
+  const menu = el("button", "round-btn", top);
+  menu.innerHTML = '<svg width="22" height="18" viewBox="0 0 22 18" aria-hidden="true"><path d="M2 2h18M2 9h18M2 16h18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
   menu.ariaLabel = "Menü";
   const pill = el("div", "task-pill", top);
   // Skip back and forth inside a level — kids want to retry one or peek at the next.
