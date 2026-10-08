@@ -167,15 +167,15 @@ const SIGNS: Record<SignId, SignDef> = {
       }
     },
   },
-  // Einbahnstraße — arrow points left because the sign is mounted parallel to the road (see placement).
+  // Einbahnstraße — arrow points right: the sign hangs parallel to the road, facing away from it (see placement).
   "220": {
     w: 1.0, h: 0.33, twoSided: true,
     shape: (c, W, H) => roundRect(c, 2, 2, W - 4, H - 4, 8),
     paint: (c, W, H, { flip }) => {
       roundRect(c, 2, 2, W - 4, H - 4, 8);
       fill(c, BLUE);
-      if (flip) arrow(c, W * 0.07, W * 0.94, H / 2, H * 0.42, WHITE);
-      else arrow(c, W * 0.93, W * 0.06, H / 2, H * 0.42, WHITE);
+      if (flip) arrow(c, W * 0.93, W * 0.06, H / 2, H * 0.42, WHITE);
+      else arrow(c, W * 0.07, W * 0.94, H / 2, H * 0.42, WHITE);
       c.fillStyle = BLACK;
       c.font = `700 ${H * 0.24}px Arial, sans-serif`;
       c.textAlign = "center";

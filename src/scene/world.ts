@@ -102,7 +102,9 @@ export function buildLevel(layout: Layout) {
     const exiting = [...(spec.exitSigns ?? []).filter((id) => !parallel(id)), ...(spec.zebra ? (["350"] as const) : [])];
     if (exiting.length) group.add(signPost(exiting, info, at(edge + 0.6, exitRight), out.clone().negate()));
     const along = (spec.exitSigns ?? []).filter(parallel);
-    if (along.length) group.add(signPost(along, info, at(edge + 4, exitRight), rightOf(out).negate(), 2.8));
+    // Facing away from the road, towards traffic on the crossing street on that corner's side: from
+    // there you see the face with the post behind it, not the post cutting through the back.
+    if (along.length) group.add(signPost(along, info, at(edge + 4, exitRight), rightOf(out), 2.8));
   }
   return { group, lights };
 }
