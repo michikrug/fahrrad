@@ -1,39 +1,59 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { isCorrect } from "./check";
+import { scenarios } from "./content/scenarios";
+import { listenForTaps } from "./play";
+import { buildActor, type Actor } from "./scene/actors";
+import { buildRoads } from "./scene/roads";
+import { createWorld, disposeTree } from "./scene/world";
+import { createUI } from "./ui";
 
-// P0 placeholder: grey-box crossing to prove the toolchain renders on a tablet.
 const app = document.querySelector<HTMLDivElement>("#app")!;
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-// Cap at 2: school iPads report 2–3, and 3 costs a lot of fill rate for no visible gain.
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-app.appendChild(renderer.domElement);
+const world = createWorld(app);
+const ui = createUI(app);
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x9fd7ff);
-const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 500);
-camera.position.set(25, 30, 25);
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.maxPolarAngle = Math.PI / 2.2; // never look from below the ground
+let index = 0;
+let level = new THREE.Group();
+let actors: Actor[] = [];
+let tapped: string[] = [];
 
-scene.add(new THREE.HemisphereLight(0xffffff, 0x88aa66, 2));
-const grass = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshLambertMaterial({ color: 0x7cc46a }));
-grass.rotation.x = -Math.PI / 2;
-scene.add(grass);
-const asphalt = new THREE.MeshLambertMaterial({ color: 0x555555 });
-for (const [w, d] of [[80, 8], [8, 80]]) {
-  const road = new THREE.Mesh(new THREE.BoxGeometry(w, 0.1, d), asphalt);
-  road.position.y = 0.05;
-  scene.add(road);
+function load(i: number) {
+  disposeTree(level);
+  level = new THREE.Group();
+  const s = scenarios[i];
+  level.add(buildRoads(s.layout));
+  actors = s.participants.map(buildActor);
+  for (const a of actors) level.add(a.obj);
+  world.scene.add(level);
+  tapped = [];
+  ui.showScenario(s.title, "Wer darf zuerst fahren? Tippe alle in der richtigen Reihenfolge an.");
 }
 
-function resize() {
-  renderer.setSize(app.clientWidth, app.clientHeight);
-  camera.aspect = app.clientWidth / app.clientHeight;
-  camera.updateProjectionMatrix();
+function renderPins() {
+  for (const a of actors) {
+    const n = tapped.indexOf(a.p.id);
+    a.pin.textContent = n < 0 ? "" : String(n + 1);
+    a.pin.classList.toggle("on", n >= 0);
+  }
 }
-addEventListener("resize", resize);
-resize();
-renderer.setAnimationLoop(() => {
-  controls.update();
-  renderer.render(scene, camera);
+
+listenForTaps(world.renderer.domElement, world.camera, () => actors.map((a) => a.obj), (id) => {
+  const s = scenarios[index];
+  if (tapped.length === actors.length) return; // answer already given
+  // Tapping the last one again takes it back — kids mis-tap a lot.
+  if (tapped.at(-1) === id) tapped.pop();
+  else if (!tapped.includes(id)) tapped.push(id);
+  renderPins();
+  if (tapped.length === actors.length) ui.showResult(isCorrect(s.answer, tapped), s.explain);
 });
+
+ui.onReset(() => {
+  tapped = [];
+  renderPins();
+  ui.hideResult();
+});
+ui.onNext(() => {
+  index = (index + 1) % scenarios.length;
+  load(index);
+});
+
+load(index);
