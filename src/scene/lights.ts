@@ -152,17 +152,17 @@ export function buildLight(layout: Layout, arm: Arm): { group: THREE.Group; cont
   group.add(pole);
 
   // Pedestrian heads at the curb on both ends of the crossing, facing across (walkers look at the
-  // opposite side), each to the right of the crossing as seen by the people waiting for it. The one
-  // behind the crossing hangs on the car signal pole, as is common, instead of a second post beside it —
-  // unless a bike signal already takes that height there.
+  // opposite side). Both on the crossing's far side from the junction: on the junction side they stood
+  // right at the corner. One hangs on the car signal pole, as is common, instead of a second post
+  // beside it — unless a bike signal already takes that height there.
   const peds: ReturnType<typeof signalHead>[] = [];
   if (spec.ped) {
-    const [a, b] = crossingBand(layout);
+    const [, b] = crossingBand(layout);
     for (const side of [1, -1]) {
       const head = signalHead(["red", "green"], 0.15, "walk");
       const across = rightOf(DIR[arm]).multiplyScalar(side);
       const onPole = side < 0 && !spec.bike; // the car pole stands on this side, right behind the crossing
-      const p = onPole ? pos.clone() : DIR[arm].clone().multiplyScalar(side > 0 ? a - 0.3 : b + 0.3).addScaledVector(across, ROAD_HALF + 0.4);
+      const p = onPole ? pos.clone() : DIR[arm].clone().multiplyScalar(b + 0.3).addScaledVector(across, ROAD_HALF + 0.4);
       const post = new THREE.Group();
       post.position.copy(p);
       post.rotation.y = Math.atan2(-across.x, -across.z);
