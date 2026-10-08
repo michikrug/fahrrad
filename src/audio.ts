@@ -164,7 +164,7 @@ export function moverSound(kind: MoverKind): Voice {
   let lastRev = 0;
   rev(0);
   // The engine pulse halves the average volume, hence the higher car/bus levels.
-  const level = { car: 0.6, bus: 0.8, bike: 0.3, pedestrian: 0.8 }[kind];
+  const level = { car: 0.6, bus: 0.8, bike: 0.2, pedestrian: 0.8 }[kind];
   for (const src of sources) src.start();
   return {
     set(g, p, r = 1) {
