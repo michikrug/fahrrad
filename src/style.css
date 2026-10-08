@@ -267,3 +267,18 @@ canvas { display: block; }
   .sheet { width: min(620px, 94vw); border-radius: 22px; }
   .pane > *, .map-foot > * { max-width: 640px; width: 100%; margin-left: auto; margin-right: auto; box-sizing: border-box; }
 }
+
+/* Letters and digits in circles: the text box is trimmed to cap height and baseline, then padded down by
+   (inner diameter − 1cap) / 2, so the glyph itself sits in the middle — fonts place capitals differently in
+   the line box (worst with the rounded system font). text-box only works on block boxes, hence display: block.
+   Last in the file so it overrides the grid centring above; browsers without text-box (before Safari 18.2 /
+   Chrome 133) keep that, about 1 px off. */
+@supports (text-box: trim-both cap alphabetic) {
+  .card-letter, .level-num, .chip .num, .pin.on { display: block; box-sizing: border-box; text-align: center;
+    text-box: trim-both cap alphabetic; padding: calc((var(--d) - 1cap) / 2) 0 0; }
+  .card-letter { --d: 30px; }
+  .level-num { --d: 48px; }
+  .chip .num { --d: 22px; } /* 26 px minus the 2 px dashed border */
+  .chip.on .num { --d: 26px; }
+  .pin { --d: 26px; } /* 32 px minus the 3 px white border; hidden pins (no .on) stay display: none */
+}
