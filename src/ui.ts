@@ -327,17 +327,20 @@ export function createUI(root: HTMLElement) {
       if (!modal.classList.contains("hidden")) closeModal();
     },
 
+    /** Lernkarte, laid out like the feedback sheet: the sign sits in the round badge where ✓/! would be. */
     showCard(card: RuleCard, signs: HTMLCanvasElement[]) {
       openModal((s) => {
+        const badge = el("div", "fb-badge sign", s, signs.length ? "" : (card.icon ?? "📘"));
+        if (signs[0]) badge.appendChild(signs[0]);
         el("h2", "", s, card.title);
-        if (signs.length) {
+        if (signs.length > 1) {
           const row = el("div", "card-signs", s);
-          for (const c of signs) row.appendChild(c);
+          for (const c of signs.slice(1)) row.appendChild(c);
         }
         el("p", "", s, card.text);
         sourceLink(s, card, "Quelle: ");
-        readToggle(el("button", "btn small", s), () => `${card.title}. ${card.text}`);
-      });
+        readToggle(el("button", "pill-btn", el("div", "fb-pills", s)), () => `${card.title}. ${card.text}`);
+      }, { icon: "", text: "Zurück", then: () => {}, primary: true }, "rule");
     },
 
     /**

@@ -219,8 +219,16 @@ canvas { display: block; }
 .done-stats span { font: 700 13px var(--font); opacity: .85; }
 .modal.full p { color: #fff; margin: 4px 0 6px; font-weight: 600; }
 .modal.full .close { background: #ffffff26; color: #fff; }
-.card-signs { display: flex; gap: 10px; flex-wrap: wrap; }
-.card-signs canvas { height: 64px; width: auto; flex: none; }
+/* Lernkarte: same build as the feedback sheet — badge on the top edge (here white, holding the sign),
+   centred text, pill, one big button. Not scrollable as a whole, or the badge would be clipped. */
+.modal.rule .sheet { position: relative; overflow: visible; max-height: none; margin-top: 46px; padding-top: 52px; text-align: center; }
+.modal.rule .sheet p { max-height: 34vh; overflow: auto; margin: 0 auto 6px; max-width: 34em; color: #34425c; }
+.modal.rule .source { margin: 0 auto 12px; }
+.modal.rule .close { background: var(--blue); color: #fff; box-shadow: 0 5px 0 var(--blue-d); margin-top: 4px; }
+.fb-badge.sign { background: #fff; color: var(--blue); width: 84px; height: 84px; top: -42px; font-size: 40px; }
+.fb-badge.sign canvas { max-width: 58px; max-height: 58px; width: auto; height: auto; }
+.card-signs { display: flex; gap: 10px; justify-content: center; margin-bottom: 8px; }
+.card-signs canvas { height: 44px; width: auto; flex: none; }
 .source { display: block; width: fit-content; font-size: 12px; color: var(--muted); margin: 4px 0 2px; text-decoration: none; }
 
 .fps { position: absolute; top: calc(4px + env(safe-area-inset-top)); right: 6px; z-index: 5; pointer-events: none;
@@ -231,6 +239,7 @@ canvas { display: block; }
 @media (max-height: 500px) {
   .fb-badge { display: none; }
   .fb-sheet { margin-top: 0; padding-top: 14px; }
+  .modal.rule .sheet { margin-top: 0; padding-top: 16px; overflow: auto; max-height: 100%; }
 }
 
 @media (min-width: 700px) {
