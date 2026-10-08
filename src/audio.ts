@@ -111,7 +111,7 @@ export function moverSound(kind: MoverKind): Voice {
   pan.connect(vol).connect(dest);
   const filter = c.createBiquadFilter();
   const sources: AudioScheduledSourceNode[] = [];
-  /** Slow volume pulse: cylinders firing (engine) or the wheel turning (bike). */
+  /** Slow volume pulse, like firing cylinders. */
   const pulse = (rate: number, depth: number) => {
     const am = c.createGain();
     am.gain.value = 1 - depth;
@@ -146,10 +146,10 @@ export function moverSound(kind: MoverKind): Voice {
       filter.frequency.setTargetAtTime((kind === "bus" ? 220 : 320) + 260 * r, t, glide);
     };
   } else if (kind === "bike") {
-    // Tyres rolling on asphalt: deep, soft noise with a slight wobble of the turning wheel.
+    // Tyres on asphalt: a steady, soft "shh". A wobble of the turning wheel sounded like a windmill.
     filter.type = "lowpass";
-    filter.frequency.value = 320;
-    filter.connect(pulse(2.5, 0.3).am).connect(pan);
+    filter.frequency.value = 1200;
+    filter.connect(pan);
     const n = noise(c);
     n.connect(filter);
     sources.push(n);
@@ -164,7 +164,7 @@ export function moverSound(kind: MoverKind): Voice {
   let lastRev = 0;
   rev(0);
   // The engine pulse halves the average volume, hence the higher car/bus levels.
-  const level = { car: 0.6, bus: 0.8, bike: 0.6, pedestrian: 0.8 }[kind];
+  const level = { car: 0.6, bus: 0.8, bike: 0.3, pedestrian: 0.8 }[kind];
   for (const src of sources) src.start();
   return {
     set(g, p, r = 1) {
