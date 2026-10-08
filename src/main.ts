@@ -137,10 +137,6 @@ function load(i: number) {
   for (const a of actors) level.add(a.obj, a.route);
   world.scene.add(level);
   rig.setRider(actors.find((a) => a.p.kind === "player") ?? null);
-  // Frame everyone where they wait (lights/zebras push them further out), plus a little air.
-  const radius = Math.max(10, ...actors.map((a) => a.obj.position.length() + a.len / 2)) + 1.5;
-  rig.snap(s.view ?? "bird", radius);
-  ui.setView(rig.mode);
   reset();
   const lvl = levels[levelOf(i)].scenarios;
   ui.showScenario(s.title, s.choice?.question ?? "Wer darf zuerst? Tippe alle der Reihe nach an.", {
@@ -149,7 +145,19 @@ function load(i: number) {
   });
   ui.showChips(s.choice ? [] : actors.map(chipFor), pick);
   if (s.choice) askChoice();
+  // Frame everyone where they wait (lights/zebras push them further out), plus a little air —
+  // around the HUD as it is laid out now, so measure it after the texts and chips are in.
+  rig.setInsets(...insetsNow());
+  const radius = Math.max(10, ...actors.map((a) => a.obj.position.length() + a.len / 2)) + 1.5;
+  rig.snap(s.view ?? "bird", radius);
+  ui.setView(rig.mode);
 }
+
+const insetsNow = () => {
+  const { top, bottom } = ui.insets();
+  return [top, bottom] as const;
+};
+addEventListener("resize", () => rig.setInsets(...insetsNow()));
 
 // No emoji on purpose: 🚗 is always red, which confuses next to a blue car. The chip colour does the matching.
 const NAME = { car: "Auto", bus: "Bus", bike: "Rad", player: "Du", pedestrian: "Fußgänger" } as const;

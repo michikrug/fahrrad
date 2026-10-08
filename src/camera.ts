@@ -74,9 +74,23 @@ export function createCameraRig(world: World) {
   let mode: "bird" | "ego" = "bird";
   let rider: Actor | null = null;
   let t = 1; // tween progress, 1 = settled
-  const from = { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), fov: BIRD_FOV };
+  const from = { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), fov: BIRD_FOV, offset: 0 };
   const fov = (m: "bird" | "ego") => (m === "bird" ? BIRD_FOV : egoFov(camera.aspect));
   let birdRadius = 12;
+  // Screen pixels covered by the HUD (top pill, bottom chips + sheet). The picture is shifted so the
+  // junction sits in the middle of what stays visible, and the bird view is fitted to that part only.
+  // From the bike only part of that shift: a tall dock (answer cards) would push lights and signs
+  // up under the top pill, and what matters there is the road ahead, not the exact middle.
+  let insets = { top: 0, bottom: 0 };
+  const offsetFor = (m: "bird" | "ego") => {
+    const full = (insets.bottom - insets.top) / 2;
+    return m === "bird" ? full : Math.min(full, 80);
+  };
+  let offset = 0;
+  function project(y: number) {
+    offset = y;
+    camera.setViewOffset(innerWidth, innerHeight, 0, y, innerWidth, innerHeight); // also updates the projection
+  }
 
   /**
    * Default bird view: back off until a circle of `radius` metres around the junction fits
@@ -85,8 +99,8 @@ export function createCameraRig(world: World) {
   function fitBird(radius: number) {
     const v = THREE.MathUtils.degToRad(BIRD_FOV);
     const h = 2 * Math.atan(Math.tan(v / 2) * camera.aspect);
-    // Title card and dock cover roughly a quarter of the height, so only ~70% of it really shows the scene.
-    const d = radius / Math.tan(Math.min(v * 0.7, h) / 2);
+    const free = Math.max(0.4, 1 - (insets.top + insets.bottom) / innerHeight); // share of the height left visible
+    const d = radius / Math.tan(Math.min(2 * Math.atan(Math.tan(v / 2) * free), h) / 2);
     camera.position.set(0, Math.sin(BIRD_ELEVATION) * d, Math.cos(BIRD_ELEVATION) * d);
     camera.lookAt(0, 0, 0);
     controls.target.set(0, 0, 0);
@@ -116,6 +130,7 @@ export function createCameraRig(world: World) {
     from.pos.copy(camera.position);
     from.quat.copy(camera.quaternion);
     from.fov = camera.fov;
+    from.offset = offset;
     t = 0;
   }
 
@@ -135,6 +150,11 @@ export function createCameraRig(world: World) {
     targets: () => (mode === "ego" ? [bar.g] : []),
     get mode() {
       return mode;
+    },
+    setInsets(top: number, bottom: number) {
+      insets = { top, bottom };
+      if (t >= 1) from.offset = offsetFor(mode);
+      if (mode === "bird" && t >= 1) fitBird(birdRadius);
     },
     setRider(a: Actor | null) {
       rider = a;
@@ -169,6 +189,7 @@ export function createCameraRig(world: World) {
       }
       controls.enabled = to === "bird";
       from.fov = fov(to);
+      from.offset = offsetFor(to);
       t = 1;
       this.update(0);
     },
@@ -184,7 +205,7 @@ export function createCameraRig(world: World) {
         camera.quaternion.slerpQuaternions(from.quat, target.quat, k);
       }
       camera.fov = THREE.MathUtils.lerp(from.fov, fov(mode), k);
-      camera.updateProjectionMatrix();
+      project(THREE.MathUtils.lerp(from.offset, offsetFor(mode), k));
       // Hide your body by camera distance to your head, not by tween progress — otherwise
       // flying out of ego view shows the rider while the camera is still inside it.
       const head = rider ? eyeOf(rider.obj) : null;

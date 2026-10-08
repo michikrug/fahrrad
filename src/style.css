@@ -23,46 +23,67 @@ canvas { display: block; }
 .pin.on { display: grid; }
 .you { background: #ff7a00; color: #fff; font: 700 13px var(--font); padding: 1px 8px; border-radius: 10px; }
 
-.top { position: absolute; top: calc(8px + env(safe-area-inset-top)); left: 8px; right: 8px; text-align: center;
-  background: #fffe; border-radius: 16px; padding: 8px 12px; box-shadow: 0 2px 8px #0003; }
-.title { margin: 0; font-size: 19px; }
-.task { margin: 3px 0 0; font-size: 15px; line-height: 1.3; }
-.steps { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 4px;
-  font-size: 13px; color: #555; }
-.step-btn { width: 44px; height: 32px; border: none; border-radius: 10px; background: #eef3f7;
-  font: 700 22px/1 system-ui; color: #222; padding: 0 0 3px; }
+/* Plain buttons in sheets (close, Vorlesen on the rule card). Fixed size for the Vorlesen/Stopp toggle:
+   🔊 and ⏹ have different glyph heights and the labels differ in width, so the button jumped on toggle. */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: none; border-radius: 16px;
+  background: var(--soft); color: var(--ink); font: 800 17px var(--font); min-height: 52px; padding: 0 14px; }
+.btn .ico { display: block; line-height: 1; font-size: 1.15em; }
+.btn.primary { background: var(--green); color: #fff; box-shadow: 0 5px 0 var(--green-d); }
+.btn.small { font-size: 15px; height: 42px; min-height: 0; min-width: 140px; margin-top: 8px; line-height: 1;
+  border-radius: 20px; background: var(--blue-soft); color: var(--blue); }
+
+/* Task HUD. Top: back button + task pill. Bottom: chips/cards over the question sheet. */
+.hud-top { position: absolute; top: calc(10px + env(safe-area-inset-top)); left: 10px; right: 10px;
+  display: flex; align-items: center; gap: 8px; pointer-events: none; }
+.hud-top > * { pointer-events: auto; }
+.task-pill { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; background: var(--card);
+  border-radius: 26px; padding: 4px; box-shadow: var(--shadow-lift); }
+.pill-mid { flex: 1; min-width: 0; text-align: center; line-height: 1.15; }
+.pill-count { display: block; font: 800 11px var(--font); letter-spacing: 1.2px; text-transform: uppercase; color: #8a99ad; }
+.pill-title { display: block; font: 800 16px var(--font); }
+.step-btn { flex: none; width: 40px; height: 40px; border: none; border-radius: 50%; background: var(--blue-soft);
+  font: 900 20px/1 var(--font); color: var(--blue); padding: 0 0 2px; }
 .step-btn:disabled { opacity: .3; }
 
-.dock { position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom));
-  display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.dock { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none; }
 .dock > * { pointer-events: auto; }
-.bar { display: flex; gap: 8px; }
-.bar .btn { flex: 1; }
-.btn { font: 700 16px system-ui; padding: 12px 8px; min-height: 48px; border: none; border-radius: 14px;
-  background: #fff; box-shadow: 0 2px 8px #0004; color: #222;
-  display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
-.btn .ico { display: block; line-height: 1; font-size: 1.15em; }
-.btn.primary { background: #2fa84f; color: #fff; }
-.btn.small { font-size: 15px; padding: 0 14px; margin-top: 8px; box-shadow: none; background: #eef3f7;
-  /* Fixed box: 🔊 and ⏹ have different glyph heights and the labels differ in width, so the button jumped on toggle */
-  height: 38px; min-height: 0; min-width: 130px; line-height: 1; }
-
-.chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-.chip { --c: #888; display: flex; align-items: center; gap: 6px; font: 700 15px system-ui; color: #222;
-  background: #fff; border: 3px solid var(--c); border-radius: 22px; padding: 4px 12px 4px 4px; min-height: 44px;
-  box-shadow: 0 2px 6px #0003; }
-.chip .num { width: 28px; height: 28px; border-radius: 50%; background: var(--c); display: grid; place-items: center;
-  color: #fff; font-weight: 800; }
-.chip.on .num { background: #ffd400; color: #222; }
-
+.chips, .cards { padding: 0 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.chip { --c: #888; flex: 1 1 40%; max-width: 220px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  font: 800 18px var(--font); color: var(--c); background: #fff; border: 3px solid var(--c); border-radius: 18px;
+  padding: 6px 12px; min-height: 52px; box-shadow: 0 4px 0 var(--c); }
+.chip .num { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  background: #eef2f6; border: 2px dashed #c3cedb; color: var(--ink); font-weight: 900; font-size: 16px; box-sizing: border-box; }
+.chip.on .num { background: #ffd400; border: none; box-shadow: 0 2px 0 #c9a600; }
 .cards { display: flex; flex-direction: column; gap: 8px; }
-.btn.card { font-size: 17px; line-height: 1.3; padding: 14px; border: 3px solid #2f6fd6; text-align: left; justify-content: flex-start; }
+.btn.card { font: 800 16px var(--font); line-height: 1.25; padding: 10px 14px; min-height: 48px; border: 3px solid var(--blue); border-radius: 18px;
+  background: #fff; color: var(--ink); text-align: left; justify-content: flex-start; box-shadow: 0 4px 0 var(--blue); }
 
-.result { background: #fff; border-radius: 18px; padding: 12px 16px; box-shadow: 0 4px 14px #0005;
-  border-top: 7px solid #e8543a; max-height: 45vh; overflow: auto; }
-.result.ok { border-top-color: #2fa84f; }
-.result h2 { margin: 0 0 4px; font-size: 19px; }
-.result p { margin: 0; font-size: 16px; line-height: 1.4; }
+.task-sheet, .fb-sheet { background: var(--card); border-radius: 26px 26px 0 0; box-shadow: 0 -4px 18px #16233f1f;
+  padding: 14px 16px calc(12px + env(safe-area-inset-bottom)); }
+.task-q { margin: 0 0 10px; font: 800 17px/1.3 var(--font); }
+.bar { display: flex; gap: 8px; }
+.soft-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: none;
+  border-radius: 16px; background: var(--soft); min-height: 48px; font: 800 16px var(--font); color: var(--ink); }
+.soft-btn .ico, .pill-btn .ico { font-size: 1.1em; line-height: 1; }
+
+/* Feedback: round ✓/! badge sitting on the sheet's top edge, then text, pills and the big action. */
+.fb-sheet { position: relative; margin-top: 34px; padding-top: 44px; text-align: center; max-height: 52vh; overflow: auto; }
+.fb-badge { position: absolute; top: -34px; left: 50%; transform: translateX(-50%); width: 68px; height: 68px;
+  border-radius: 50%; display: grid; place-items: center; font: 900 34px var(--font); color: #fff;
+  background: var(--orange); border: 5px solid #fff; box-shadow: 0 4px 10px #0002; }
+.fb-sheet.ok .fb-badge { background: var(--green); }
+.fb-sheet { overflow: visible; }
+.fb-sheet h2 { margin: 0 0 6px; font: 900 24px var(--font); }
+.fb-sheet p { margin: 0 auto 12px; max-width: 34em; font-size: 16px; line-height: 1.45; color: #34425c; }
+.fb-pills { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+.pill-btn { display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: 20px; background: var(--blue-soft);
+  color: var(--blue); font: 800 15px var(--font); padding: 0 16px; height: 42px; min-width: 130px; justify-content: center; }
+.fb-actions { display: flex; gap: 10px; }
+.grow { flex: 1; }
+.round-soft { flex: none; width: 60px; min-height: 56px; border: none; border-radius: 18px; background: var(--soft);
+  font: 900 24px var(--font); color: var(--ink); }
 
 .banner { position: absolute; top: 22%; left: 50%; transform: translate(-50%, -50%) rotate(-4deg);
   font: 900 44px system-ui; color: #fff; background: #e8343a; padding: 8px 26px; border-radius: 18px;
@@ -73,11 +94,6 @@ canvas { display: block; }
   background: #000a; color: #fff; font: 600 16px system-ui; padding: 8px 14px; border-radius: 12px;
   pointer-events: none; animation: fadeout 4s forwards; }
 @keyframes fadeout { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
-
-.row { display: flex; gap: 8px; flex-wrap: wrap; }
-.top { padding-left: 48px; padding-right: 48px; }
-.menu-btn { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px;
-  border: none; border-radius: 12px; background: #eef3f7; font-size: 20px; }
 
 /* 3D buttons: a darker bottom edge that the button sinks into when pressed. */
 .btn3d { --c: var(--blue); --d: var(--blue-d); border: none; border-radius: 18px; background: var(--c); color: #fff;
@@ -188,11 +204,10 @@ canvas { display: block; }
 
 /* Tablet / desktop: a bit more air, dock centred instead of full width. */
 @media (min-width: 700px) {
-  .top { left: 50%; right: auto; transform: translateX(-50%); max-width: 640px; }
-  .title { font-size: 24px; }
-  .task { font-size: 17px; }
+  .hud-top { left: 50%; right: auto; transform: translateX(-50%); width: min(640px, 94vw); }
+  .pill-title { font-size: 19px; }
   .dock { left: 50%; right: auto; transform: translateX(-50%); width: min(720px, 94vw); }
-  .btn { font-size: 19px; }
+  .task-sheet, .fb-sheet { border-radius: 26px; margin-bottom: 14px; }
   .banner { font-size: 60px; }
   .modal { align-items: center; justify-content: center; }
   .sheet { width: min(620px, 94vw); border-radius: 22px; }

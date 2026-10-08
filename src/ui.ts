@@ -101,36 +101,45 @@ function switchRow(parent: HTMLElement, title: string, sub: string, on: boolean,
 }
 
 export function createUI(root: HTMLElement) {
-  const top = el("div", "top", root);
-  const menu = el("button", "menu-btn", top, "☰");
-  const title = el("h1", "title", top);
-  const task = el("p", "task", top);
+  // Top: round back button and a pill with ‹ AUFGABE 2 VON 5 / title ›. Small, so the scene stays free.
+  const top = el("div", "hud-top", root);
+  const menu = el("button", "round-btn", top, "‹");
+  menu.ariaLabel = "Zur Übersicht";
+  const pill = el("div", "task-pill", top);
   // Skip back and forth inside a level — kids want to retry one or peek at the next.
-  const steps = el("div", "steps", top);
-  const prev = el("button", "step-btn", steps, "‹");
-  const count = el("span", "", steps);
-  const fwd = el("button", "step-btn", steps, "›");
+  const prev = el("button", "step-btn", pill, "‹");
+  const mid = el("div", "pill-mid", pill);
+  const count = el("span", "pill-count", mid);
+  const title = el("strong", "pill-title", mid);
+  const fwd = el("button", "step-btn", pill, "›");
   prev.ariaLabel = "Vorherige Aufgabe";
   fwd.ariaLabel = "Nächste Aufgabe";
 
   const banner = el("div", "banner hidden", root, "Achtung!");
   const hint = el("div", "hint hidden", root, "👀 Wische zur Seite, um dich umzuschauen");
 
+  // Bottom, in thumb reach: chips or answer cards over a sheet with the question; after answering,
+  // the feedback sheet takes its place.
   const dock = el("div", "dock", root);
-  const result = el("div", "result hidden", dock);
+  const result = el("div", "fb-sheet hidden", dock);
+  const badge = el("div", "fb-badge", result);
   const resultHead = el("h2", "", result);
   const resultText = el("p", "", result);
-  const resultBtns = el("div", "row", result);
-  const read = el("button", "btn small", resultBtns);
-  const ruleBtn = el("button", "btn small", resultBtns);
+  const resultBtns = el("div", "fb-pills", result);
+  const read = el("button", "pill-btn", resultBtns);
+  const ruleBtn = el("button", "pill-btn", resultBtns);
+  const fbActions = el("div", "fb-actions", result);
+  const again = el("button", "", fbActions);
+  again.ariaLabel = "Nochmal";
+  const next = el("button", "btn3d green grow", fbActions, "Weiter");
   const cards = el("div", "cards hidden", dock);
   const chips = el("div", "chips hidden", dock);
-  const bar = el("div", "bar", dock);
-  const reset = el("button", "btn", bar);
-  const view = el("button", "btn", bar);
-  const next = el("button", "btn primary", bar);
+  const taskSheet = el("div", "task-sheet", dock);
+  const task = el("p", "task-q", taskSheet);
+  const bar = el("div", "bar", taskSheet);
+  const reset = el("button", "soft-btn", bar);
+  const view = el("button", "soft-btn", bar);
   setLabel(reset, "↺", "Nochmal");
-  setLabel(next, "➜", "Weiter", true);
 
   const resetRead = readToggle(read, () => `${resultHead.textContent} ${resultText.textContent}`);
 
@@ -387,7 +396,7 @@ export function createUI(root: HTMLElement) {
     },
     /** `pos` = place in the level, for the ‹ 2 von 5 › stepper. */
     showScenario(t: string, taskText: string, pos: { i: number; n: number }) {
-      count.textContent = `Aufgabe ${pos.i + 1} von ${pos.n}`;
+      count.textContent = `Aufgabe ${pos.i + 1} von ${pos.n}`; // shown in capitals
       prev.disabled = pos.i === 0;
       fwd.disabled = pos.i === pos.n - 1;
       stopSpeaking();
@@ -396,21 +405,26 @@ export function createUI(root: HTMLElement) {
       task.textContent = taskText;
       if (autoRead && map.classList.contains("hidden")) speak(`${t}. ${taskText}`, () => {});
       result.classList.add("hidden");
+      taskSheet.classList.remove("hidden");
       cards.classList.add("hidden");
-      next.classList.add("hidden");
     },
     /** `rule` adds a button to the result sheet that opens the Lernkarte. */
     showResult(ok: boolean, explain: string, rule?: { title: string; open: () => void }) {
       ruleBtn.classList.toggle("hidden", !rule);
       if (rule) {
-        setLabel(ruleBtn, "📖", "Regel");
+        setLabel(ruleBtn, "📖", "Regel ansehen");
         onRule = rule.open;
       }
       banner.classList.add("hidden");
       chips.classList.add("hidden"); // the sheet needs the room on a phone
+      taskSheet.classList.add("hidden");
       result.classList.remove("hidden");
       result.classList.toggle("ok", ok);
-      resultHead.textContent = ok ? "Klasse gemacht! 🎉" : "Fast! Schau noch mal genau hin.";
+      badge.textContent = ok ? "✓" : "!";
+      // Right: Weiter is the big one, retry a small round button. Wrong: retry is the big one.
+      again.className = ok ? "round-soft" : "btn3d orange grow";
+      again.textContent = ok ? "↺" : "Nochmal";
+      resultHead.textContent = ok ? "Klasse gemacht!" : "Fast! Schau nochmal.";
       resultText.textContent = explain;
       // Through the Vorlesen button, so it shows "Stopp" while reading.
       if (autoRead && map.classList.contains("hidden")) read.click();
@@ -421,6 +435,7 @@ export function createUI(root: HTMLElement) {
       resetRead();
       result.classList.add("hidden");
       banner.classList.add("hidden");
+      taskSheet.classList.remove("hidden");
       chips.classList.toggle("hidden", !chipEls.size);
     },
     showBanner: () => banner.classList.remove("hidden"),
@@ -428,7 +443,9 @@ export function createUI(root: HTMLElement) {
       prev.addEventListener("click", () => f(-1));
       fwd.addEventListener("click", () => f(1));
     },
-    onReset: (f: () => void) => reset.addEventListener("click", f),
+    onReset: (f: () => void) => (reset.addEventListener("click", f), again.addEventListener("click", f)),
+    /** Screen pixels the HUD covers at the top and bottom right now, so the camera can frame around it. */
+    insets: () => ({ top: top.getBoundingClientRect().bottom, bottom: innerHeight - dock.getBoundingClientRect().top }),
     onNext: (f: () => void) => next.addEventListener("click", f),
   };
 }
