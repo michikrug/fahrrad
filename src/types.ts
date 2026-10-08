@@ -54,6 +54,7 @@ export interface RuleCard {
   title: string;
   text: string;
   signs?: SignId[];
+  icon?: string; // Spickzettel tile when the rule has no sign
   source: string; // e.g. "§ 8 Abs. 1 StVO"
   url: string;
 }

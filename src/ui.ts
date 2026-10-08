@@ -12,14 +12,6 @@ const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, parent: 
   return e;
 };
 
-/** Progress bar; `color` defaults to the level colour (--lc). */
-function progressBar(parent: HTMLElement, share: number, color?: string) {
-  const b = el("span", "bar-track", parent);
-  const fill = el("span", "bar-fill", b);
-  fill.style.width = `${Math.round(share * 100)}%`;
-  if (color) fill.style.background = color;
-}
-
 /**
  * Button content as separate icon + text spans, so flexbox can centre the emoji vertically —
  * emoji glyphs sit on the text baseline with different metrics and look misaligned otherwise.
@@ -70,12 +62,9 @@ export interface MapLevel {
   hint?: string; // what is missing, on the first locked level only
 }
 
-// One colour per level for its icon tile and progress bar, in map order.
-const LEVEL_COLORS = ["#2f6fd6", "#ff7a00", "#e23d6e", "#2fa84f", "#555e6b", "#1f8fb3", "#7a4fc4", "#d9534f", "#e0a800"];
-
-/** Emoji-only read-aloud button; speak() itself stops whatever was being read. */
+/** Round ▶ read-aloud button, no stop state; speak() itself stops whatever was being read. */
 function speakBtn(parent: HTMLElement, text: () => string) {
-  const b = el("button", "speak", parent, "🔊");
+  const b = el("button", "speak", parent, "▶");
   b.setAttribute("aria-label", "Vorlesen");
   b.addEventListener("click", () => speak(text(), () => {}));
   return b;
@@ -92,6 +81,23 @@ export interface SheetEntry {
   canvas: HTMLCanvasElement;
   name: string;
   text: string;
+}
+export interface SheetData {
+  rules: { card: RuleCard; signs: HTMLCanvasElement[] }[];
+  signs: SheetEntry[];
+}
+
+/** A real checkbox styled as a switch: keyboard, screen readers and the label keep working. */
+function switchRow(parent: HTMLElement, title: string, sub: string, on: boolean, set: (on: boolean) => void) {
+  const label = el("label", "set-row", parent);
+  const t = el("span", "set-text", label);
+  el("strong", "", t, title);
+  el("span", "", t, sub);
+  const box = el("input", "switch", label);
+  box.type = "checkbox";
+  box.setAttribute("role", "switch");
+  box.checked = on;
+  box.addEventListener("change", () => set(box.checked));
 }
 
 export function createUI(root: HTMLElement) {
@@ -154,75 +160,149 @@ export function createUI(root: HTMLElement) {
 
   let onRule = () => {};
   ruleBtn.addEventListener("click", () => onRule());
+  let mapTab: "karte" | "spick" | "settings" = "karte";
+  let autoRead = false;
+
+  function mapPane(pane: HTMLElement, levels: MapLevel[], pick: (i: number) => void) {
+    const head = el("div", "map-head", pane);
+    const row = el("div", "map-title", head);
+    const t = el("div", "", row);
+    el("h1", "", t, "Fahrrad-Führerschein");
+    const solved = levels.reduce((n, l) => n + l.solved, 0), total = levels.reduce((n, l) => n + l.n, 0);
+    el("div", "map-total", t, `${solved} von ${total} Aufgaben geschafft`);
+    el("div", "pct", row, `${Math.round((solved / total) * 100)}%`);
+    const track = el("div", "map-track", head);
+    el("span", "map-fill", track).style.width = `${(solved / total) * 100}%`;
+
+    const list = el("div", "levels", pane);
+    levels.forEach((l, i) => {
+      const state = l.locked ? "locked" : l.next ? "next" : l.done ? "done" : "open";
+      const b = el("button", `level ${state}`, list);
+      // Badge: the level's icon for the one to play now, ✓ when done, else its number.
+      el("span", state === "next" ? "level-tile" : "level-num", b, state === "next" ? l.icon : state === "done" ? "✓" : String(i + 1));
+      const info = el("span", "level-info", b);
+      el("strong", "", info, state === "next" ? `${i + 1} · ${l.title}` : l.title);
+      if (!l.locked) {
+        const sub = el("span", "level-sub", info);
+        el("span", "level-stars", sub, `${"★".repeat(l.stars)}${"☆".repeat(l.n - l.stars)}`);
+        el("span", "", sub, `${l.solved}/${l.n}`);
+      } else if (l.hint) el("span", "level-hint", info, l.hint);
+      if (!l.locked) b.addEventListener("click", () => pick(i));
+      else b.disabled = true;
+    });
+  }
+
+  /** Spickzettel: rules or signs (segmented control), each with ▶ read-aloud and the source. */
+  function sheetPane(pane: HTMLElement, data: SheetData, close: () => void) {
+    const head = el("div", "pane-head", pane);
+    el("h1", "", head, "Spickzettel");
+    const x = el("button", "round-btn", head, "✕");
+    x.setAttribute("aria-label", "Schließen");
+    x.addEventListener("click", close);
+    const seg = el("div", "segmented", pane);
+    const list = el("div", "cards-list", pane);
+    const fill = (which: "rules" | "signs") => {
+      for (const b of seg.children) b.classList.toggle("on", (b as HTMLElement).dataset.k === which);
+      list.replaceChildren();
+      if (which === "rules")
+        for (const { card, signs } of data.rules) {
+          const box = el("div", "info-card", list);
+          const top = el("div", "info-top", box);
+          const tile = el("span", "info-tile", top, signs.length ? "" : (card.icon ?? "📘"));
+          if (signs[0]) tile.appendChild(signs[0]);
+          el("strong", "", top, card.title);
+          speakBtn(top, () => `${card.title}. ${card.text}`);
+          el("p", "", box, card.text);
+          sourceLink(box, card);
+        }
+      else
+        for (const e of data.signs) {
+          const box = el("div", "info-card", list);
+          const top = el("div", "info-top", box);
+          el("span", "info-tile sign", top).appendChild(e.canvas);
+          const t = el("div", "info-name", top);
+          el("strong", "", t, e.name);
+          el("p", "", t, e.text);
+          speakBtn(top, () => `${e.name}. ${e.text}`);
+        }
+    };
+    for (const [k, label] of [["rules", "Regeln"], ["signs", "Verkehrszeichen"]] as const) {
+      const b = el("button", "", seg, label);
+      b.dataset.k = k;
+      b.addEventListener("click", () => fill(k));
+    }
+    fill("rules");
+  }
+
+  function settingsPane(pane: HTMLElement, o: {
+    sound: boolean; setSound: (on: boolean) => void; autoRead: boolean; setAutoRead: (on: boolean) => void;
+    free: boolean; setFree: (on: boolean) => void; resetProgress: () => void;
+  }) {
+    el("h1", "", el("div", "pane-head", pane), "Einstellungen");
+    switchRow(pane, "Geräusche", "Hupen, Klingeln, Motoren", o.sound, o.setSound);
+    switchRow(pane, "Vorlesen", "Aufgaben automatisch vorlesen", o.autoRead, o.setAutoRead);
+    switchRow(pane, "Alle Level freischalten", "Für Eltern und Lehrkräfte", o.free, o.setFree);
+    const reset = el("button", "set-row danger", pane);
+    el("strong", "", reset, "Fortschritt zurücksetzen");
+    el("span", "chev", reset, "›");
+    reset.addEventListener("click", () =>
+      openModal((s) => {
+        el("h2", "", s, "Wirklich alles löschen?");
+        el("p", "", s, "Alle Sterne und geschafften Aufgaben werden gelöscht. Das kann man nicht rückgängig machen.");
+        const yes = el("button", "btn3d red wide", s, "Ja, alles löschen");
+        yes.addEventListener("click", () => ((afterClose = o.resetProgress), closeModal()));
+      }, { icon: "", text: "Abbrechen", then: () => {}, primary: false }),
+    );
+  }
 
   return {
     onMenu: (f: () => void) => menu.addEventListener("click", f),
 
     /**
-     * Level overview. Locked levels say what is missing instead of just showing a lock.
-     * `close` (only when opened from a running task) adds a big "back" button in thumb reach.
+     * Overview with three tabs (Karte, Spickzettel, Einstellungen) and a bottom panel in thumb reach.
+     * The tabs are not URLs: back/forward only moves between overview and tasks.
      */
     showMap(levels: MapLevel[], o: {
       pick: (i: number) => void;
-      openSheet: () => void;
+      sheet: () => SheetData;
+      cta: { label: string; go: () => void };
       free: boolean;
       setFree: (on: boolean) => void;
       sound: boolean;
       setSound: (on: boolean) => void;
-      close?: () => void;
+      autoRead: boolean;
+      setAutoRead: (on: boolean) => void;
+      resetProgress: () => void;
     }) {
+      stopSpeaking();
       map.replaceChildren();
-      const head = el("div", "map-head", map);
-      const top = el("div", "map-title", head);
-      el("h1", "", top, "🚲 Fahrrad-Führerschein");
-      const cheat = el("button", "cheat", top);
-      el("span", "cheat-ico", cheat, "📖");
-      el("span", "", cheat, "Spickzettel");
-      cheat.addEventListener("click", o.openSheet);
-      const solved = levels.reduce((n, l) => n + l.solved, 0), total = levels.reduce((n, l) => n + l.n, 0);
-      progressBar(head, solved / total, "#2fa84f");
-      el("div", "map-total", head, `${solved} von ${total} Aufgaben geschafft`);
-
-      const list = el("div", "levels", map);
-      levels.forEach((l, i) => {
-        const b = el("button", `level${l.locked ? " locked" : ""}${l.next ? " next" : ""}`, list);
-        b.style.setProperty("--lc", LEVEL_COLORS[i % LEVEL_COLORS.length]);
-        el("span", "level-icon", b, l.locked ? "🔒" : l.icon);
-        const info = el("span", "level-info", b);
-        el("strong", "", info, `${i + 1}. ${l.title}`);
-        if (!l.locked) {
-          const sub = el("span", "level-sub", info);
-          el("span", "level-stars", sub, `${"★".repeat(l.stars)}${"☆".repeat(l.n - l.stars)}`);
-          progressBar(sub, l.solved / l.n);
-          el("span", "", sub, `${l.solved}/${l.n}`);
-        } else if (l.hint) el("span", "level-hint", info, l.hint);
-        if (l.done) el("span", "level-badge done", b, "✓");
-        else if (l.next) el("span", "level-badge", b, "Los ▸");
-        if (!l.locked) b.addEventListener("click", () => o.pick(i));
-      });
-
-      const settings = el("div", "settings", map);
-      el("h3", "", settings, "Einstellungen");
-      const option = (text: string, on: boolean, set: (on: boolean) => void) => {
-        const label = el("label", "option", settings);
-        el("span", "", label, text);
-        // A real checkbox, styled as a switch: keyboard, screen readers and labels keep working.
-        const box = el("input", "switch", label);
-        box.type = "checkbox";
-        box.setAttribute("role", "switch");
-        box.checked = on;
-        box.addEventListener("change", () => set(box.checked));
+      const pane = el("div", "pane", map);
+      const foot = el("div", "map-foot", map);
+      const cta = el("button", "btn3d orange cta", foot, o.cta.label);
+      cta.addEventListener("click", o.cta.go);
+      const tabs = el("nav", "tabbar", foot);
+      const TABS = [["karte", "Karte"], ["spick", "Spickzettel"], ["settings", "Einstellungen"]] as const;
+      const show = (t: typeof mapTab) => {
+        mapTab = t;
+        stopSpeaking();
+        pane.replaceChildren();
+        pane.scrollTop = 0;
+        cta.classList.toggle("hidden", t !== "karte");
+        for (const b of tabs.children) b.classList.toggle("on", (b as HTMLElement).dataset.tab === t);
+        if (t === "karte") mapPane(pane, levels, o.pick);
+        else if (t === "spick") sheetPane(pane, o.sheet(), () => show("karte"));
+        else settingsPane(pane, o);
       };
-      option("🔓 Alle Level frei wählen", o.free, o.setFree);
-      option("🔈 Geräusche", o.sound, o.setSound);
-      if (o.close) {
-        const back = el("button", "btn primary map-close", map);
-        setLabel(back, "←", "Zurück zur Aufgabe");
-        back.addEventListener("click", o.close);
+      for (const [id, label] of TABS) {
+        const b = el("button", "tab", tabs, label);
+        b.dataset.tab = id;
+        b.addEventListener("click", () => show(id));
       }
+      show(mapTab);
       map.classList.remove("hidden");
     },
     hideMap: () => map.classList.add("hidden"),
+    setAutoRead: (on: boolean) => void (autoRead = on),
     /** Close any sheet without its follow-up action — the URL decides what shows next. */
     hideModal() {
       afterClose = () => {};
@@ -239,43 +319,6 @@ export function createUI(root: HTMLElement) {
         el("p", "", s, card.text);
         sourceLink(s, card, "Quelle: ");
         readToggle(el("button", "btn small", s), () => `${card.title}. ${card.text}`);
-      });
-    },
-
-    /** Spickzettel: all rules (with source) first, then every sign. Header with ✕ and jump tabs stays on top. */
-    showSheet(cards: { card: RuleCard; signs: HTMLCanvasElement[] }[], entries: SheetEntry[]) {
-      openModal((s) => {
-        const head = el("div", "sheet-head", s);
-        const row = el("div", "sheet-title", head);
-        el("h2", "", row, "📖 Spickzettel");
-        const x = el("button", "sheet-x", row, "✕");
-        x.setAttribute("aria-label", "Schließen");
-        x.addEventListener("click", closeModal);
-        const tabs = el("div", "tabs", head);
-
-        const section = (title: string) => {
-          const h = el("h3", "", s, title);
-          el("button", "tab", tabs, title).addEventListener("click", () => h.scrollIntoView({ behavior: "smooth" }));
-        };
-        section("Regeln");
-        for (const { card, signs } of cards) {
-          const box = el("div", "sheet-rule", s);
-          const top = el("div", "sheet-rule-top", box);
-          el("strong", "", top, card.title);
-          for (const c of signs) top.appendChild(c);
-          speakBtn(top, () => `${card.title}. ${card.text}`);
-          el("p", "", box, card.text);
-          sourceLink(box, card);
-        }
-        section("Verkehrszeichen");
-        for (const e of entries) {
-          const row = el("div", "sheet-row", s);
-          el("div", "sign-box", row).appendChild(e.canvas);
-          const t = el("div", "sign-text", row);
-          el("strong", "", t, e.name);
-          el("p", "", t, e.text);
-          speakBtn(row, () => `${e.name}. ${e.text}`);
-        }
       });
     },
 
@@ -351,6 +394,7 @@ export function createUI(root: HTMLElement) {
       resetRead();
       title.textContent = t;
       task.textContent = taskText;
+      if (autoRead && map.classList.contains("hidden")) speak(`${t}. ${taskText}`, () => {});
       result.classList.add("hidden");
       cards.classList.add("hidden");
       next.classList.add("hidden");
@@ -368,6 +412,8 @@ export function createUI(root: HTMLElement) {
       result.classList.toggle("ok", ok);
       resultHead.textContent = ok ? "Klasse gemacht! 🎉" : "Fast! Schau noch mal genau hin.";
       resultText.textContent = explain;
+      // Through the Vorlesen button, so it shows "Stopp" while reading.
+      if (autoRead && map.classList.contains("hidden")) read.click();
       next.classList.toggle("hidden", !ok);
     },
     hideResult() {

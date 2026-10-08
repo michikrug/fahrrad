@@ -31,11 +31,13 @@ export function speak(text: string, onEnd: () => void) {
   u.lang = "de-DE";
   const v = navigator.onLine ? voice : (offlineVoice ?? voice);
   if (v) u.voice = v;
-  u.onend = u.onerror = onEnd;
+  u.onend = u.onerror = () => (duck(false), onEnd());
+  duck(true);
   speechSynthesis.speak(u);
 }
 
 export function stopSpeaking() {
+  duck(false);
   // cancel() while idle delays the next speak() in Chrome, so only cancel when needed.
   if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
 }
@@ -62,6 +64,11 @@ addEventListener("pointerdown", () => void out().c.resume());
 export function setSound(on: boolean) {
   soundOn = on;
   if (master) master.gain.value = on ? 1 : 0;
+}
+
+/** Engines and footsteps go quiet while text is read aloud, so the voice stays clear. */
+function duck(on: boolean) {
+  if (master && audio) master.gain.setTargetAtTime(soundOn ? (on ? 0.25 : 1) : 0, audio.currentTime, 0.1);
 }
 
 let noiseBuf: AudioBuffer | undefined;

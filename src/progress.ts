@@ -57,6 +57,9 @@ export const saveFree = (on: boolean) => saveFlag("fahrrad.free.v1", on);
 // Sound effects; on by default, a class full of tablets wants them off.
 export const loadSound = () => loadFlag("fahrrad.sound.v1", true);
 export const saveSound = (on: boolean) => saveFlag("fahrrad.sound.v1", on);
+// Read every task and result aloud on its own. Off by default: a class of tablets all talking at once.
+export const loadAutoRead = () => loadFlag("fahrrad.read.v1", false);
+export const saveAutoRead = (on: boolean) => saveFlag("fahrrad.read.v1", on);
 
 export function levelStats(level: Level, p: Progress) {
   const n = level.scenarios.length;

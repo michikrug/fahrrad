@@ -4,7 +4,7 @@ import { createCameraRig } from "./camera";
 import { firstMistake, isCorrect } from "./check";
 import { rules, signInfo } from "./content/rules";
 import { levels, scenarios } from "./content/scenarios";
-import { UNLOCK_SHARE, isUnlocked, levelStats, loadFree, loadProgress, loadSound, record, saveFree, saveProgress, saveSound } from "./progress";
+import { UNLOCK_SHARE, isUnlocked, levelStats, loadAutoRead, loadFree, loadProgress, loadSound, record, saveAutoRead, saveFree, saveProgress, saveSound } from "./progress";
 import { signCanvas } from "./scene/signs";
 import { clearTime, isNearMiss, listenForTaps, nearMissSchedule, schedule, type Run } from "./play";
 import { buildActor, placeAt, updateSignal, type Actor } from "./scene/actors";
@@ -24,6 +24,8 @@ let progress = loadProgress();
 let free = loadFree(); // all levels open, ignoring the 80 % rule
 let sound = loadSound();
 setSound(sound);
+let autoRead = loadAutoRead();
+ui.setAutoRead(autoRead);
 let mistakes = 0; // wrong answers on the current scenario — a star needs zero
 let level = new THREE.Group();
 let actors: Actor[] = [];
@@ -66,12 +68,10 @@ function showCard(id: string) {
   ui.showCard(card, (card.signs ?? []).map(signImg));
 }
 
-function openSheet() {
-  ui.showSheet(
-    rules.map((card) => ({ card, signs: (card.signs ?? []).map(signImg) })),
-    (Object.keys(signInfo) as SignId[]).map((id) => ({ canvas: signImg(id), ...signInfo[id] })),
-  );
-}
+const sheetData = () => ({
+  rules: rules.map((card) => ({ card, signs: (card.signs ?? []).map(signImg) })),
+  signs: (Object.keys(signInfo) as SignId[]).map((id) => ({ canvas: signImg(id), ...signInfo[id] })),
+});
 
 /** Continue where the kid left off: first unsolved scenario, else from the start. */
 function startLevel(i: number) {
@@ -95,7 +95,11 @@ function showMap() {
     })),
     {
       pick: startLevel,
-      openSheet,
+      sheet: sheetData,
+      // The big button: back into a running task, else straight into the level to play now.
+      cta: played
+        ? { label: "Zurück zur Aufgabe", go: () => go(index, false) }
+        : { label: `Los geht's: ${levels[Math.max(next, 0)].title}`, go: () => startLevel(Math.max(next, 0)) },
       free,
       setFree(on) {
         free = on;
@@ -108,8 +112,17 @@ function showMap() {
         saveSound(on);
         setSound(on);
       },
-      // Only once the kid has opened a task: before that the scene behind is just a backdrop.
-      close: played ? () => go(index, false) : undefined,
+      autoRead,
+      setAutoRead(on) {
+        autoRead = on;
+        saveAutoRead(on);
+        ui.setAutoRead(on);
+      },
+      resetProgress() {
+        progress = {};
+        saveProgress(progress);
+        showMap();
+      },
     },
   );
 }
@@ -356,8 +369,9 @@ function render(restart: boolean) {
   ui.hideModal();
   const i = indexFromUrl();
   if (i === null) {
+    showMap(); // first: auto-read stays quiet while the overview is open
     if (index < 0) load(0); // a scene always sits behind the map
-    return showMap();
+    return;
   }
   played = true;
   ui.hideMap();

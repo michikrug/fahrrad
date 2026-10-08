@@ -18,6 +18,7 @@ export const rules: RuleCard[] = [
   },
   {
     id: "gegenverkehr",
+    icon: "↰",
     title: "Abbiegen: Gegenverkehr zuerst",
     text: "Wer abbiegt, muss alle durchlassen, die entgegenkommen – Autos und Fahrräder. Das gilt für Autos genauso wie für dich.",
     source: "§ 9 Abs. 3 StVO",
@@ -25,6 +26,7 @@ export const rules: RuleCard[] = [
   },
   {
     id: "rechtsabbieger",
+    icon: "↱",
     title: "Rechts abbiegen: Radfahrer geradeaus zuerst",
     text: "Ein Auto, das rechts abbiegen will, muss Radfahrer durchlassen, die neben ihm geradeaus fahren. Aber Achtung: Schau immer, ob der Fahrer dich wirklich gesehen hat!",
     source: "§ 9 Abs. 3 Satz 1 StVO",
@@ -32,6 +34,7 @@ export const rules: RuleCard[] = [
   },
   {
     id: "fussgaenger-abbiegen",
+    icon: "🚶",
     title: "Abbiegen: Rücksicht auf Fußgänger",
     text: "Wenn du abbiegst und jemand zu Fuß über die Straße geht, nimmst du besondere Rücksicht. Wenn nötig, wartest du.",
     source: "§ 9 Abs. 3 Satz 3 StVO",
@@ -71,6 +74,7 @@ export const rules: RuleCard[] = [
   },
   {
     id: "ampel",
+    icon: "🚦",
     title: "Ampel",
     text: "Grün heißt: Du darfst fahren. Gelb heißt: Vor der Kreuzung warten. Rot heißt: Halt vor der Kreuzung! Als Radfahrer achtest du auf die Ampel für die Fahrzeuge. Fährst du auf einem Radweg mit eigener Fahrrad-Ampel, gilt die Fahrrad-Ampel.",
     source: "§ 37 Abs. 2 Nr. 1 und 6 StVO",
@@ -110,6 +114,7 @@ export const rules: RuleCard[] = [
   },
   {
     id: "zeichen-geben",
+    icon: "👋",
     title: "Zeichen geben",
     text: "Bevor du abbiegst, schaust du über die Schulter nach hinten und streckst den Arm in die Richtung, in die du willst. Autos blinken. Willst du links abbiegen, fährst du dann rechtzeitig bis zur Straßenmitte („einordnen“). Kurz vor dem Abbiegen schaust du noch einmal nach hinten.",
     source: "§ 9 Abs. 1 StVO",
@@ -117,6 +122,7 @@ export const rules: RuleCard[] = [
   },
   {
     id: "gehweg",
+    icon: "🚸",
     title: "Gehweg oder Straße?",
     text: "Bis du 8 Jahre alt bist, musst du mit dem Rad auf dem Gehweg fahren. Bis 10 Jahre darfst du es noch. Danach fährst du auf der Straße oder dem Radweg.",
     source: "§ 2 Abs. 5 StVO",
