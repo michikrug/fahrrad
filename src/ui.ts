@@ -69,11 +69,13 @@ export interface MapLevel {
   hint?: string; // what is missing, on the first locked level only
 }
 
-/** Round ▶ read-aloud button, no stop state; speak() itself stops whatever was being read. */
+/**
+ * Round ▶/■ read-aloud button, the same everywhere. Starting another one stops this one: speak()
+ * cancels the running utterance, whose end event then resets this button to ▶.
+ */
 function speakBtn(parent: HTMLElement, text: () => string) {
-  const b = el("button", "speak", parent, "▶");
-  b.setAttribute("aria-label", "Vorlesen");
-  b.addEventListener("click", () => speak(text(), () => {}));
+  const b = el("button", "speak", parent);
+  readToggle(b, text, true);
   return b;
 }
 
