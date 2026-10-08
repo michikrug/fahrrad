@@ -112,11 +112,11 @@ export function createUI(root: HTMLElement) {
     modal.classList.add("hidden");
     afterClose();
   }
-  function openModal(build: (into: HTMLElement) => void, close = { icon: "✓", text: "Schließen", then: () => {} }) {
+  function openModal(build: (into: HTMLElement) => void, close = { icon: "✓", text: "Schließen", then: () => {}, primary: true }) {
     sheet.replaceChildren();
     build(sheet);
     afterClose = close.then;
-    const btn = el("button", "btn primary close", sheet);
+    const btn = el("button", close.primary ? "btn primary close" : "btn close", sheet);
     setLabel(btn, close.icon, close.text);
     btn.addEventListener("click", closeModal);
     modal.classList.remove("hidden");
@@ -222,7 +222,11 @@ export function createUI(root: HTMLElement) {
      * End of a level. `next` names the level that is now open; `missing` = tasks still needed
      * for the unlock share (0 = level done). Closing leads to the map.
      */
-    showLevelDone(o: { title: string; stars: number; n: number; missing: number; next?: string; last: boolean }, then: () => void) {
+    /** `next` (the next level's name) is set when that level is playable; it then gets the main button. */
+    showLevelDone(
+      o: { title: string; stars: number; n: number; missing: number; next?: string; last: boolean },
+      go: { map: () => void; next: () => void },
+    ) {
       openModal((s) => {
         const done = o.missing === 0;
         el("h2", "level-done", s, done ? "🎉 Level geschafft!" : "Fast geschafft!");
@@ -230,8 +234,12 @@ export function createUI(root: HTMLElement) {
         el("p", "", s, `„${o.title}“: ${o.stars} von ${o.n} Aufgaben ohne Fehler gelöst.`);
         if (!done) el("p", "", s, `Löse noch ${o.missing} ${o.missing === 1 ? "Aufgabe" : "Aufgaben"}, dann ist das Level geschafft.`);
         else if (o.last) el("p", "", s, "Du hast die Abschlussprüfung geschafft! 🏆");
-        else if (o.next) el("p", "", s, `Als Nächstes: ${o.next}`);
-      }, { icon: "➜", text: "Zur Übersicht", then });
+        if (o.next) {
+          const b = el("button", "btn primary close", s);
+          setLabel(b, "➜", `Weiter: ${o.next}`);
+          b.addEventListener("click", () => ((afterClose = go.next), closeModal()));
+        }
+      }, { icon: "☰", text: "Zur Übersicht", then: go.map, primary: !o.next });
     },
 
     setView(mode: "bird" | "ego") {

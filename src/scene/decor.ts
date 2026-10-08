@@ -46,10 +46,20 @@ export function tree(r: () => number) {
   return g;
 }
 
+/** Ground footprint (x/z extent, height flattened) of a house or tree, roof and crown included. */
+export function footprint(o: THREE.Object3D) {
+  const b = new THREE.Box3().setFromObject(o);
+  b.min.y = 0;
+  b.max.y = 0;
+  return b;
+}
+
 export function buildDecor(layout: Layout): THREE.Group {
   const g = new THREE.Group();
   const r = rng(7);
   const start = (layout.roundabout ? RING_OUT + WALK + 6 : 15);
+  // Rows of neighbouring arms meet at the corners; skip whatever would overlap something already placed.
+  const placed: THREE.Box3[] = [];
   for (const arm of ARMS) {
     const across = rightOf(DIR[arm]);
     // Without a road on this arm the houses stand right where it would be.
@@ -58,6 +68,9 @@ export function buildDecor(layout: Layout): THREE.Group {
       for (let s = start; s < 42; s += 8 + r() * 3) {
         const item = r() < 0.55 ? house(r) : tree(r);
         item.position.copy(DIR[arm]).multiplyScalar(s).addScaledVector(across, lat + Math.sign(lat) * r() * 2);
+        const box = footprint(item).expandByScalar(0.5);
+        if (placed.some((b) => b.intersectsBox(box))) continue;
+        placed.push(box);
         g.add(item);
       }
     }

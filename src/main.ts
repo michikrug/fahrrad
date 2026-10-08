@@ -68,16 +68,18 @@ function openSheet() {
   ui.showSheet(rules, (Object.keys(signInfo) as SignId[]).map((id) => ({ canvas: signImg(id), ...signInfo[id] })));
 }
 
+/** Continue where the kid left off: first unsolved scenario, else from the start. */
+function startLevel(i: number) {
+  const first = levels[i].scenarios.find((s) => !progress[s.id]?.solved) ?? levels[i].scenarios[0];
+  go(scenarios.indexOf(first));
+}
+
 function showMap() {
   // The scene behind keeps running, so closing the map resumes exactly where the kid was.
   ui.showMap(
     levels.map((l, i) => ({ ...l, ...levelStats(l, progress), locked: !free && !isUnlocked(levels, i, progress) })),
     {
-      pick(i) {
-        // Continue where the kid left off: first unsolved scenario, else from the start.
-        const first = levels[i].scenarios.find((s) => !progress[s.id]?.solved) ?? levels[i].scenarios[0];
-        go(scenarios.indexOf(first));
-      },
+      pick: startLevel,
       openSheet,
       free,
       setFree(on) {
@@ -260,8 +262,8 @@ function levelDone() {
   ui.showLevelDone({
     title: levels[i].title, n, stars, last,
     missing: Math.max(0, Math.ceil(n * UNLOCK_SHARE) - solved),
-    next: !last && isUnlocked(levels, i + 1, progress) ? `${i + 2}. ${levels[i + 1].title}` : undefined,
-  }, () => go(null));
+    next: !last && (free || isUnlocked(levels, i + 1, progress)) ? `${i + 2}. ${levels[i + 1].title}` : undefined,
+  }, { map: () => go(null), next: () => startLevel(i + 1) });
 }
 
 ui.onNext(() => {
