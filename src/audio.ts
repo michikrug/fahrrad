@@ -5,13 +5,12 @@
 const QUALITY = [/premium/i, /enhanced|erweitert/i, /natural/i, /google/i, /anna|helena|petra/i];
 
 let voice: SpeechSynthesisVoice | undefined;
-let offlineVoice: SpeechSynthesisVoice | undefined;
 function pickVoice() {
   const de = speechSynthesis.getVoices().filter((v) => v.lang.replace("_", "-").startsWith("de"));
   const best = (vs: SpeechSynthesisVoice[]) => QUALITY.map((re) => vs.find((v) => re.test(v.name))).find(Boolean) ?? vs[0];
-  voice = best(de);
-  // Chrome's "Google" voices stream from the network and stay silent offline (school without WLAN).
-  offlineVoice = best(de.filter((v) => v.localService));
+  // On-device voices first: offline, desktop Chrome's network "Google Deutsch" silently falls back to the
+  // English default voice, and navigator.onLine can't tell (it stays true with a VPN or WLAN without internet).
+  voice = best(de.filter((v) => v.localService)) ?? best(de);
 }
 // Voices load asynchronously; pick early so the first click doesn't wait for them.
 pickVoice();
@@ -25,8 +24,7 @@ export function speak(text: string, onEnd: () => void) {
   stopSpeaking();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "de-DE";
-  const v = navigator.onLine ? voice : (offlineVoice ?? voice);
-  if (v) u.voice = v;
+  if (voice) u.voice = voice;
   u.onend = u.onerror = onEnd;
   speechSynthesis.speak(u);
 }
