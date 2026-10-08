@@ -159,7 +159,9 @@ export function createUI(root: HTMLElement) {
   const viewBtns = { bird: el("button", "", view, "Von oben"), ego: el("button", "", view, "Vom Rad") };
   setLabel(reset, "↺", "Nochmal");
 
-  const resetTaskRead = readToggle(taskRead, () => `${title.textContent}. ${task.textContent}`, true);
+  // Choice tasks: the answer cards are read too, with their letters ("A: …").
+  let choiceText = "";
+  const resetTaskRead = readToggle(taskRead, () => `${title.textContent}. ${task.textContent} ${choiceText}`, true);
   const resetRead = readToggle(read, () => `${resultHead.textContent} ${resultText.textContent}`, true);
 
   const chipEls = new Map<string, HTMLButtonElement>();
@@ -435,10 +437,17 @@ export function createUI(root: HTMLElement) {
     showChoice(options: string[], pick: (i: number) => void) {
       cards.replaceChildren();
       cards.classList.remove("hidden");
-      options.forEach((text, i) => el("button", "btn card", cards, text).addEventListener("click", () => {
-        cards.classList.add("hidden");
-        pick(i);
-      }));
+      const letter = (i: number) => String.fromCharCode(65 + i); // A, B, C
+      choiceText = options.map((text, i) => `${letter(i)}: ${text}.`).join(" "); // full stops: a pause per option
+      options.forEach((text, i) => {
+        const b = el("button", "btn card", cards);
+        el("span", "card-letter", b, letter(i));
+        el("span", "", b, text);
+        b.addEventListener("click", () => {
+          cards.classList.add("hidden");
+          pick(i);
+        });
+      });
     },
     /** `pos` = place in the level, for the ‹ 2 von 5 › stepper. */
     showScenario(t: string, taskText: string, pos: { i: number; n: number }) {
@@ -448,10 +457,12 @@ export function createUI(root: HTMLElement) {
       stopSpeaking();
       resetRead();
       resetTaskRead();
+      choiceText = "";
       title.textContent = t;
       task.textContent = taskText;
       // Through the button, so it shows ⏹ while reading and can stop it.
-      if (autoRead && map.classList.contains("hidden")) taskRead.click();
+      // A tick later: the answer cards of a choice task are added right after this.
+      if (autoRead && map.classList.contains("hidden")) setTimeout(() => taskRead.click());
       result.classList.add("hidden");
       taskSheet.classList.remove("hidden");
       cards.classList.add("hidden");

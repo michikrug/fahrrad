@@ -63,6 +63,9 @@ canvas { display: block; }
 .cards { display: flex; flex-direction: column; gap: 8px; }
 .btn.card { font: 800 16px var(--font); line-height: 1.25; padding: 10px 14px; min-height: 48px; border: 3px solid var(--blue); border-radius: 18px;
   background: #fff; color: var(--ink); text-align: left; justify-content: flex-start; box-shadow: 0 4px 0 var(--blue); }
+.btn.card { gap: 12px; }
+.card-letter { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--blue); color: #fff; font: 900 15px var(--font); }
 
 .task-sheet, .fb-sheet { background: var(--card); border-radius: 26px 26px 0 0; box-shadow: 0 -4px 18px #16233f1f;
   padding: 14px 16px calc(12px + env(safe-area-inset-bottom)); }
