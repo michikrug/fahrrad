@@ -10,14 +10,14 @@ const LIT: Record<Phase, Lamp[]> = { red: ["red"], redyellow: ["red", "yellow"],
 const housingMat = new THREE.MeshLambertMaterial({ color: 0x1c1c1c });
 const poleMat = new THREE.MeshLambertMaterial({ color: 0x9aa0a6 });
 
-// Soft radial sprite for the glow around a lit lamp — cheaper than bloom post-processing on tablets.
+// Soft radial halo around a lit lamp — cheaper than bloom post-processing on tablets.
 const glowTex = (() => {
   const c = document.createElement("canvas");
   c.width = c.height = 64;
   const ctx = c.getContext("2d")!;
   const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
   g.addColorStop(0, "rgba(255,255,255,1)");
-  g.addColorStop(0.3, "rgba(255,255,255,0.5)");
+  g.addColorStop(0.25, "rgba(255,255,255,0.45)");
   g.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 64, 64);
@@ -35,11 +35,12 @@ function signalHead(lamps: Lamp[], r: number, icon?: "bike" | "walk") {
     const m = new THREE.MeshBasicMaterial({ color: COLORS[color] });
     const lamp = new THREE.Mesh(new THREE.CircleGeometry(r, 20), m);
     lamp.position.set(0, h / 2 - r * 1.3 - i * r * 2.6, r * 0.81);
-    const glow = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: glowTex, color: COLORS[color], blending: THREE.AdditiveBlending, depthWrite: false,
+    // A flat halo on the housing front, not a camera-facing sprite: a sprite cut through the housing
+    // when seen from above and also glowed out of the back of the head.
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(r * 4, r * 4), new THREE.MeshBasicMaterial({
+      map: glowTex, color: COLORS[color], blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
     }));
-    glow.scale.setScalar(r * 7);
-    glow.position.copy(lamp.position).setZ(r * 1.1);
+    glow.position.copy(lamp.position).setZ(r * 0.9);
     g.add(lamp, glow);
     return { color, m, glow };
   });
