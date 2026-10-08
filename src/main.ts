@@ -1,10 +1,10 @@
 import * as THREE from "three";
-import { ringBell } from "./audio";
+import { moverSound, nearMissSound, ringBell, setSound, type MoverKind, type Voice } from "./audio";
 import { createCameraRig } from "./camera";
 import { firstMistake, isCorrect } from "./check";
 import { rules, signInfo } from "./content/rules";
 import { levels, scenarios } from "./content/scenarios";
-import { UNLOCK_SHARE, isUnlocked, levelStats, loadFree, loadProgress, record, saveFree, saveProgress } from "./progress";
+import { UNLOCK_SHARE, isUnlocked, levelStats, loadFree, loadProgress, loadSound, record, saveFree, saveProgress, saveSound } from "./progress";
 import { signCanvas } from "./scene/signs";
 import { clearTime, isNearMiss, listenForTaps, nearMissSchedule, schedule, type Run } from "./play";
 import { buildActor, placeAt, updateSignal, type Actor } from "./scene/actors";
@@ -22,6 +22,8 @@ const rig = createCameraRig(world);
 let index = -1; // into the flat `scenarios` list (-1 = none loaded yet); levels are consecutive slices of it
 let progress = loadProgress();
 let free = loadFree(); // all levels open, ignoring the 80 % rule
+let sound = loadSound();
+setSound(sound);
 let mistakes = 0; // wrong answers on the current scenario — a star needs zero
 let level = new THREE.Group();
 let actors: Actor[] = [];
@@ -86,6 +88,12 @@ function showMap() {
         free = on;
         saveFree(on);
         showMap();
+      },
+      sound,
+      setSound(on) {
+        sound = on;
+        saveSound(on);
+        setSound(on);
       },
       // Only once the kid has opened a task: before that the scene behind is just a backdrop.
       close: played ? () => go(index, false) : undefined,
@@ -222,6 +230,7 @@ function stepSim(dt: number) {
   }
   const [x, y] = sim.pair ?? [];
   if (x && y && sim.at && isNearMiss(x, y, sim.at)) {
+    nearMissSound([x, y].some((a) => a.p.kind === "car" || a.p.kind === "bus"));
     sim.done?.(true);
     sim = null; // freeze in place
     return;
@@ -233,12 +242,29 @@ function stepSim(dt: number) {
   }
 }
 
+/** One looping sound per road user that is moving right now; louder when near, panned to its side. */
+const voices = new Map<Actor, Voice>();
+const toCamera = new THREE.Vector3();
+function updateSounds() {
+  const moving = new Set(sim?.runs.filter((r) => r.started && r.a.d < r.a.path.getLength()).map((r) => r.a));
+  for (const [a, v] of voices) if (!moving.has(a)) (v.stop(), voices.delete(a));
+  for (const a of moving) {
+    let v = voices.get(a);
+    if (!v) voices.set(a, (v = moverSound((a.p.kind === "player" ? "bike" : a.p.kind) as MoverKind)));
+    toCamera.copy(a.obj.position).applyMatrix4(world.camera.matrixWorldInverse);
+    // Full volume within 12 m (the bike view), fading with distance; bird's-eye view sits ~30 m up.
+    const gain = Math.min(1, 12 / Math.max(toCamera.length(), 1));
+    v.set(gain, THREE.MathUtils.clamp(toCamera.x / (Math.abs(toCamera.z) + 2), -1, 1) * 0.8);
+  }
+}
+
 // Order matters: move actors first, then the camera follows the (possibly moved) bike.
 world.onFrame((dt) => {
   stepSim(dt);
   clock += dt;
   for (const a of actors) updateSignal(a, clock, !!current().layout.roundabout);
   rig.update(dt);
+  updateSounds();
 });
 
 listenForTaps(world.renderer.domElement, world.camera, () => [...actors.map((a) => a.obj), ...rig.targets()], (id) => {
@@ -336,6 +362,6 @@ if (new URLSearchParams(location.search).has("fps")) {
 }
 
 // Dev only: lets headless tests inspect state from the console.
-if (import.meta.env.DEV) Object.assign(window, { world, rig });
+if (import.meta.env.DEV) Object.assign(window, { world, rig, voices });
 // Offline use (public/sw.js). Not in dev: a cached app would hide Vite's hot reload.
 if (import.meta.env.PROD && "serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");

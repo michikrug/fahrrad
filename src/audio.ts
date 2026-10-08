@@ -40,27 +40,181 @@ export function stopSpeaking() {
   if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
 }
 
+// --- Sound effects: all synthesised with Web Audio, no files (nothing to download, works offline).
+
 let audio: AudioContext | undefined;
+let master: GainNode | undefined;
+let soundOn = true;
+/** Effects go through one master gain, so the on/off setting mutes them all at once. */
+function out() {
+  audio ??= new AudioContext();
+  if (!master) {
+    master = audio.createGain();
+    master.gain.value = soundOn ? 1 : 0;
+    master.connect(audio.destination);
+  }
+  return { c: audio, out: master };
+}
+// iOS starts an AudioContext created outside a touch as "suspended", and suspends it again after
+// interruptions (calls, other apps). Resuming on every touch is cheap and covers both.
+addEventListener("pointerdown", () => void out().c.resume());
+
+export function setSound(on: boolean) {
+  soundOn = on;
+  if (master) master.gain.value = on ? 1 : 0;
+}
+
+let noiseBuf: AudioBuffer | undefined;
+function noise(c: AudioContext) {
+  if (!noiseBuf) {
+    noiseBuf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const src = c.createBufferSource();
+  src.buffer = noiseBuf;
+  src.loop = true;
+  return src;
+}
+
+/** Two footsteps per loop: short noise thumps, the second a bit softer. */
+let stepsBuf: AudioBuffer | undefined;
+function steps(c: AudioContext) {
+  if (!stepsBuf) {
+    const len = 0.9;
+    stepsBuf = c.createBuffer(1, c.sampleRate * len, c.sampleRate);
+    const d = stepsBuf.getChannelData(0);
+    for (const [at, level] of [[0, 1], [len / 2, 0.7]]) {
+      const i0 = Math.floor(at * c.sampleRate);
+      for (let i = 0; i < c.sampleRate * 0.12; i++) d[i0 + i] = (Math.random() * 2 - 1) * level * Math.exp(-i / (c.sampleRate * 0.02));
+    }
+  }
+  const src = c.createBufferSource();
+  src.buffer = stepsBuf;
+  src.loop = true;
+  return src;
+}
+
+export type MoverKind = "car" | "bus" | "bike" | "pedestrian";
+export interface Voice {
+  /** `gain` 0..1 (distance), `pan` -1 (left) .. 1 (right). */
+  set(gain: number, pan: number): void;
+  stop(): void;
+}
+
+/** Looping sound of one moving road user, until stop(). */
+export function moverSound(kind: MoverKind): Voice {
+  const { c, out: dest } = out();
+  const vol = c.createGain();
+  vol.gain.value = 0;
+  const pan = c.createStereoPanner();
+  pan.connect(vol).connect(dest);
+  const filter = c.createBiquadFilter();
+  filter.connect(pan);
+  const sources: AudioScheduledSourceNode[] = [];
+  if (kind === "car" || kind === "bus") {
+    // Engine: two slightly detuned low saws, muffled — the beating gives the "rumble".
+    const f = kind === "bus" ? 38 : 55;
+    filter.type = "lowpass";
+    filter.frequency.value = kind === "bus" ? 260 : 380;
+    filter.Q.value = 2;
+    for (const k of [1, 1.03]) {
+      const o = c.createOscillator();
+      o.type = "sawtooth";
+      o.frequency.value = f * k;
+      o.connect(filter);
+      sources.push(o);
+    }
+  } else if (kind === "bike") {
+    // Tyres on asphalt: quiet band of noise.
+    filter.type = "bandpass";
+    filter.frequency.value = 900;
+    filter.Q.value = 0.8;
+    const n = noise(c);
+    n.connect(filter);
+    sources.push(n);
+  } else {
+    filter.type = "lowpass";
+    filter.frequency.value = 700;
+    const s = steps(c);
+    s.connect(filter);
+    sources.push(s);
+  }
+  const level = { car: 0.35, bus: 0.5, bike: 0.25, pedestrian: 0.8 }[kind];
+  for (const s of sources) s.start();
+  return {
+    set(g, p) {
+      // Smoothed, so moving cameras don't make it crackle.
+      vol.gain.setTargetAtTime(g * level, c.currentTime, 0.05);
+      pan.pan.setTargetAtTime(p, c.currentTime, 0.05);
+    },
+    stop() {
+      vol.gain.setTargetAtTime(0, c.currentTime, 0.05);
+      for (const s of sources) s.stop(c.currentTime + 0.3);
+    },
+  };
+}
+
+/** Near miss: squealing tyres, then a honk (`horn`) or the bell. */
+export function nearMissSound(horn: boolean) {
+  const { c, out: dest } = out();
+  const now = c.currentTime;
+  const env = c.createGain();
+  env.gain.setValueAtTime(0.3, now);
+  env.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+  env.connect(dest);
+  const squeal = c.createOscillator();
+  squeal.type = "sawtooth";
+  squeal.frequency.setValueAtTime(1150, now);
+  squeal.frequency.exponentialRampToValueAtTime(750, now + 0.7);
+  const bp = c.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.value = 1800;
+  bp.Q.value = 3;
+  const n = noise(c);
+  squeal.connect(bp);
+  n.connect(bp).connect(env);
+  for (const s of [squeal, n]) (s.start(now), s.stop(now + 0.8));
+  if (!horn) return void setTimeout(ringBell, 450);
+  // Car horn: two square tones a third apart, slightly muffled.
+  const h = c.createGain();
+  h.gain.setValueAtTime(0, now + 0.45);
+  h.gain.linearRampToValueAtTime(0.12, now + 0.47);
+  h.gain.setValueAtTime(0.12, now + 0.95);
+  h.gain.linearRampToValueAtTime(0, now + 1);
+  const lp = c.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 1800;
+  lp.connect(h).connect(dest);
+  for (const f of [349, 440]) {
+    const o = c.createOscillator();
+    o.type = "square";
+    o.frequency.value = f;
+    o.connect(lp);
+    o.start(now + 0.45);
+    o.stop(now + 1.05);
+  }
+}
 
 /**
  * "Ring ring" of a bicycle bell, synthesised — no sound file.
  * A bell is a few inharmonic partials with a fast attack and a long decay.
  */
 export function ringBell() {
-  audio ??= new AudioContext();
-  const now = audio.currentTime;
-  const out = audio.createGain();
-  out.gain.value = 0.25;
-  out.connect(audio.destination);
+  const { c, out: dest } = out();
+  const now = c.currentTime;
+  const bell = c.createGain();
+  bell.gain.value = 0.25;
+  bell.connect(dest);
   for (const strike of [0, 0.18]) {
     for (const [ratio, level] of [[1, 1], [2.76, 0.5], [5.4, 0.25]] as const) {
-      const osc = audio.createOscillator();
-      const env = audio.createGain();
+      const osc = c.createOscillator();
+      const env = c.createGain();
       osc.frequency.value = 2200 * ratio;
       env.gain.setValueAtTime(0, now + strike);
       env.gain.linearRampToValueAtTime(level, now + strike + 0.005);
       env.gain.exponentialRampToValueAtTime(0.001, now + strike + 1.2 / ratio);
-      osc.connect(env).connect(out);
+      osc.connect(env).connect(bell);
       osc.start(now + strike);
       osc.stop(now + strike + 1.3);
     }

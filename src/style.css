@@ -82,8 +82,8 @@ canvas { display: block; }
 .level-info { display: flex; flex-direction: column; gap: 3px; }
 .level-info strong { font-size: 17px; }
 .level-sub { font-size: 14px; color: #555; }
-.free { display: flex; align-items: center; gap: 10px; margin: 16px 4px; font-size: 16px; color: #333; }
-.free input { width: 24px; height: 24px; margin: 0; accent-color: #2fa84f; }
+.option { display: flex; align-items: center; gap: 10px; margin: 16px 4px; font-size: 16px; color: #333; }
+.option input { width: 24px; height: 24px; margin: 0; accent-color: #2fa84f; }
 /* Sticky at the bottom: the obvious, thumb-reachable way out of the menu. */
 .map-close { position: sticky; bottom: 0; width: 100%; }
 
@@ -118,6 +118,6 @@ canvas { display: block; }
   .banner { font-size: 60px; }
   .modal { align-items: center; justify-content: center; }
   .sheet { width: min(620px, 94vw); border-radius: 22px; }
-  .levels, .free, .map-close { max-width: 640px; margin-left: auto; margin-right: auto; }
+  .levels, .option, .map-close { max-width: 640px; margin-left: auto; margin-right: auto; }
   .map-close { display: flex; }
 }

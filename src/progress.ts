@@ -35,23 +35,28 @@ export function record(p: Progress, id: string, ok: boolean, firstTry: boolean):
   return { ...p, [id]: { solved: ok || !!old?.solved, firstTry: (ok && firstTry) || !!old?.firstTry } };
 }
 
-// Free choice of levels (for parents/teachers or kids who already know the basics). Own key, so
-// resetting progress doesn't flip it.
-const FREE_KEY = "fahrrad.free.v1";
-export function loadFree() {
+// Settings flags, each under its own key so resetting progress doesn't flip them.
+function loadFlag(key: string, fallback: boolean) {
   try {
-    return localStorage.getItem(FREE_KEY) === "1";
+    const v = localStorage.getItem(key);
+    return v === null ? fallback : v === "1";
   } catch {
-    return false;
+    return fallback;
   }
 }
-export function saveFree(on: boolean) {
+function saveFlag(key: string, on: boolean) {
   try {
-    localStorage.setItem(FREE_KEY, on ? "1" : "0");
+    localStorage.setItem(key, on ? "1" : "0");
   } catch {
     // see saveProgress
   }
 }
+// Free choice of levels (for parents/teachers or kids who already know the basics).
+export const loadFree = () => loadFlag("fahrrad.free.v1", false);
+export const saveFree = (on: boolean) => saveFlag("fahrrad.free.v1", on);
+// Sound effects; on by default, a class full of tablets wants them off.
+export const loadSound = () => loadFlag("fahrrad.sound.v1", true);
+export const saveSound = (on: boolean) => saveFlag("fahrrad.sound.v1", on);
 
 export function levelStats(level: Level, p: Progress) {
   const n = level.scenarios.length;

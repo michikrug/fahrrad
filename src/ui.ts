@@ -138,6 +138,8 @@ export function createUI(root: HTMLElement) {
       openSheet: () => void;
       free: boolean;
       setFree: (on: boolean) => void;
+      sound: boolean;
+      setSound: (on: boolean) => void;
       close?: () => void;
     }) {
       map.replaceChildren();
@@ -157,12 +159,16 @@ export function createUI(root: HTMLElement) {
           : `${"★".repeat(l.stars)}${"☆".repeat(l.n - l.stars)}  ${l.solved}/${l.n} geschafft`);
         if (!l.locked) b.addEventListener("click", () => o.pick(i));
       });
-      const free = el("label", "free", map);
-      const box = el("input", "", free);
-      box.type = "checkbox";
-      box.checked = o.free;
-      box.addEventListener("change", () => o.setFree(box.checked));
-      el("span", "", free, "🔓 Alle Level frei wählen");
+      const option = (text: string, on: boolean, set: (on: boolean) => void) => {
+        const label = el("label", "option", map);
+        const box = el("input", "", label);
+        box.type = "checkbox";
+        box.checked = on;
+        box.addEventListener("change", () => set(box.checked));
+        el("span", "", label, text);
+      };
+      option("🔓 Alle Level frei wählen", o.free, o.setFree);
+      option("🔈 Geräusche", o.sound, o.setSound);
       if (o.close) {
         const back = el("button", "btn primary map-close", map);
         setLabel(back, "←", "Zurück zur Aufgabe");
