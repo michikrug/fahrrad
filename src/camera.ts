@@ -31,12 +31,15 @@ const TWEEN_S = 0.9;
 function handlebarExtras() {
   const g = new THREE.Group();
   g.position.copy(BAR);
-  // Bell on the right side of the bar, where kids' thumbs are.
+  // Bell on the right, just inside the grip where kids' thumbs are, on a small clamp around the bar.
   const bell = new THREE.Mesh(
-    new THREE.SphereGeometry(0.035, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.SphereGeometry(0.03, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
     new THREE.MeshLambertMaterial({ color: 0xd8dde2, emissive: 0x222222 }),
   );
-  bell.position.set(-0.13, 0.025, 0);
+  bell.position.set(-0.19, 0.03, 0);
+  const clamp = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 12).rotateZ(Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0x333333 }));
+  clamp.position.set(0, -0.03, 0);
+  bell.add(clamp);
   // Invisible, bigger hit sphere: the bell is tiny on screen.
   const hit = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6));
   hit.visible = false;
