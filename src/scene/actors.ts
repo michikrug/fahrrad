@@ -201,7 +201,11 @@ export function buildActor(p: Participant, layout: Layout): Actor {
   const { path, clear, enter } =
     p.kind === "pedestrian"
       ? crossPath(layout, p.arm, p.side ?? 1)
-      : lanePath(layout, p.arm, p.move ?? "straight", isBike ? ROAD_HALF - 0.7 : ROAD_HALF / 2, l, p.inRing);
+      : lanePath(
+          layout, p.arm, p.move ?? "straight", isBike ? ROAD_HALF - 0.7 : ROAD_HALF / 2, l, p.inRing, p.back,
+          // § 9 Abs. 1 StVO: left-turners "bis zur Mitte einordnen" — bikes wait just right of the centre line.
+          isBike && p.move === "left" && !layout.roundabout ? 0.9 : undefined,
+        );
   const color =
     p.kind === "player" ? 0xff7a00 : p.kind === "bus" ? 0xf2c230 : p.kind === "pedestrian" ? (p.color ?? 0xe23d6e)
     : p.kind === "bike" ? (p.color ?? 0x6a4fc4) : (p.color ?? 0x2f6fd6);

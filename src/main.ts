@@ -2,13 +2,16 @@ import * as THREE from "three";
 import { ringBell } from "./audio";
 import { createCameraRig } from "./camera";
 import { firstMistake, isCorrect } from "./check";
-import { scenarios } from "./content/scenarios";
-import { clearTime, listenForTaps, nearMissDist, nearMissSchedule, schedule, type Run } from "./play";
+import { rules, signInfo } from "./content/rules";
+import { levels, scenarios } from "./content/scenarios";
+import { isUnlocked, levelStats, loadFree, loadProgress, record, saveFree, saveProgress } from "./progress";
+import { signCanvas } from "./scene/signs";
+import { clearTime, isNearMiss, listenForTaps, nearMissSchedule, schedule, type Run } from "./play";
 import { buildActor, placeAt, updateSignal, type Actor } from "./scene/actors";
 import type { LightControl } from "./scene/lights";
 import { ARMS } from "./scene/roads";
 import { buildLevel, createWorld, disposeTree } from "./scene/world";
-import type { Arm } from "./types";
+import type { Arm, Layout, SignId } from "./types";
 import { createUI } from "./ui";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -16,8 +19,10 @@ const world = createWorld(app);
 const ui = createUI(app);
 const rig = createCameraRig(world);
 
-// ?s=2 jumps to a scenario — handy for testing on the tablet.
-let index = Math.min(Number(new URLSearchParams(location.search).get("s")) || 0, scenarios.length - 1);
+let index = 0; // into the flat `scenarios` list; levels are consecutive slices of it
+let progress = loadProgress();
+let free = loadFree(); // all levels open, ignoring the 80 % rule
+let mistakes = 0; // wrong answers on the current scenario — a star needs zero
 let level = new THREE.Group();
 let actors: Actor[] = [];
 let tapped: string[] = [];
@@ -29,13 +34,67 @@ let sim: {
   runs: Run[];
   t: number;
   pair?: [Actor, Actor];
+  at?: THREE.Vector3; // where the pair's lines cross
   /** Fired once — on the near-miss, or when everyone has left the junction. */
   done: ((nearMiss: boolean) => void) | null;
 } | null = null;
 
 const current = () => scenarios[index];
+const levelOf = (i: number) => levels.findIndex((l) => l.scenarios.includes(scenarios[i]));
+
+/** Store the answer and show the result sheet with a link to the rule card. */
+function finish(ok: boolean) {
+  const s = current();
+  progress = record(progress, s.id, ok, mistakes === 0);
+  saveProgress(progress);
+  if (!ok) mistakes++;
+  const card = rules.find((r) => r.id === s.rule)!;
+  ui.showResult(ok, s.explain, { title: card.title, open: () => showCard(card.id) });
+}
+
+// The 1002 Zusatzzeichen is drawn from a layout; outside a scene, show a typical left bend.
+const SAMPLE: { layout: Layout; arm: "S" } = {
+  layout: { priority: ["S", "W"], arms: { N: {}, E: {}, S: {}, W: {} } },
+  arm: "S",
+};
+const signImg = (id: SignId) => signCanvas(id, SAMPLE);
+
+function showCard(id: string) {
+  const card = rules.find((r) => r.id === id)!;
+  ui.showCard(card, (card.signs ?? []).map(signImg));
+}
+
+function openSheet() {
+  ui.showSheet(rules, (Object.keys(signInfo) as SignId[]).map((id) => ({ canvas: signImg(id), ...signInfo[id] })));
+}
+
+/** `canClose`: opened from a running task (menu button), so offer the way back to it. */
+function showMap(canClose = false) {
+  // The scene behind keeps running, so closing the map resumes exactly where the kid was.
+  ui.showMap(
+    levels.map((l, i) => ({ ...l, ...levelStats(l, progress), locked: !free && !isUnlocked(levels, i, progress) })),
+    {
+      pick(i) {
+        ui.hideMap();
+        // Continue where the kid left off: first unsolved scenario, else from the start.
+        const first = levels[i].scenarios.find((s) => !progress[s.id]?.solved) ?? levels[i].scenarios[0];
+        index = scenarios.indexOf(first);
+        load(index);
+      },
+      openSheet,
+      free,
+      setFree(on) {
+        free = on;
+        saveFree(on);
+        showMap(canClose);
+      },
+      close: canClose ? ui.hideMap : undefined,
+    },
+  );
+}
 
 function load(i: number) {
+  mistakes = 0;
   disposeTree(level);
   const s = scenarios[i];
   ({ group: level, lights } = buildLevel(s.layout));
@@ -48,7 +107,11 @@ function load(i: number) {
   rig.snap(s.view ?? "bird", radius);
   ui.setView(rig.mode);
   reset();
-  ui.showScenario(s.title, s.choice?.question ?? "Wer darf zuerst? Tippe alle der Reihe nach an.");
+  const lvl = levels[levelOf(i)].scenarios;
+  ui.showScenario(s.title, s.choice?.question ?? "Wer darf zuerst? Tippe alle der Reihe nach an.", {
+    i: lvl.indexOf(s),
+    n: lvl.length,
+  });
   ui.showChips(s.choice ? [] : actors.map(chipFor), pick);
   if (s.choice) askChoice();
 }
@@ -73,7 +136,7 @@ function pick(id: string) {
 
 function askChoice() {
   const s = current();
-  ui.showChoice(s.choice!.options, (i) => ui.showResult(i === s.choice!.correct, s.explain));
+  ui.showChoice(s.choice!.options, (i) => finish(i === s.choice!.correct));
 }
 
 function reset() {
@@ -109,11 +172,11 @@ function drive() {
   const answer = s.answer!;
   const byId = new Map(actors.map((a) => [a.p.id, a]));
   const ok = isCorrect(answer, tapped);
-  const showResult = () => ui.showResult(ok, s.explain);
+  const showResult = () => finish(ok);
   const mistake = ok ? null : firstMistake(answer, tapped);
   const near = mistake && nearMissSchedule(byId, tapped, mistake.index, mistake.expected[0]);
   if (near) {
-    sim = { runs: near.runs, t: 0, pair: near.pair, done: (nearMiss) => {
+    sim = { runs: near.runs, t: 0, pair: near.pair, at: near.at, done: (nearMiss) => {
       if (!nearMiss) return showResult();
       ui.showBanner();
       setTimeout(showResult, 1300);
@@ -157,7 +220,7 @@ function stepSim(dt: number) {
     placeAt(r.a, Math.max(0, sim.t - r.start) * r.a.speed);
   }
   const [x, y] = sim.pair ?? [];
-  if (x && y && x.obj.position.distanceTo(y.obj.position) < nearMissDist(x, y)) {
+  if (x && y && sim.at && isNearMiss(x, y, sim.at)) {
     sim.done?.(true);
     sim = null; // freeze in place
     return;
@@ -188,11 +251,21 @@ ui.onView(() => {
 });
 ui.onReset(reset);
 ui.onNext(() => {
-  index = (index + 1) % scenarios.length;
-  load(index);
+  // End of a level: back to the map, where the next level may have just unlocked.
+  if (index + 1 >= scenarios.length || levelOf(index + 1) !== levelOf(index)) return showMap();
+  load(++index);
+});
+ui.onMenu(() => showMap(true));
+// Stay inside the level; the stepper's buttons are disabled at both ends.
+ui.onStep((d) => {
+  if (levelOf(index + d) === levelOf(index)) load((index += d));
 });
 
+// A scene always sits behind the map. ?s=2 jumps straight into a scenario — handy for testing.
+const jump = new URLSearchParams(location.search).get("s");
+index = Math.min(Number(jump) || 0, scenarios.length - 1);
 load(index);
+if (jump === null) showMap();
 
 // Dev only: lets headless tests inspect state from the console.
 if (import.meta.env.DEV) Object.assign(window, { world, rig });

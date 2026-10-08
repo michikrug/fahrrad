@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { CSS2DRenderer } from "three/addons/renderers/CSS2DRenderer.js";
-import type { Arm, Layout } from "../types";
+import type { Arm, Layout, SignId } from "../types";
 import { buildDecor } from "./decor";
 import { buildLight, type LightControl } from "./lights";
 import { ARMS, DIR, ROAD_HALF, buildRoads, edgeDist, rightOf, stopLine } from "./roads";
@@ -98,11 +98,11 @@ export function buildLevel(layout: Layout) {
     const arriving = [...(spec.signs ?? []), ...(spec.zebra ? (["350"] as const) : [])];
     if (arriving.length) group.add(signPost(arriving, info, at(stopLine(layout, arm) + (spec.light ? 2 : 0.5), arriveRight), out));
     // Signs at the mouth for traffic turning into this arm. 220 hangs parallel to the road.
-    const exiting = [...(spec.exitSigns ?? []).filter((id) => id !== "220"), ...(spec.zebra ? (["350"] as const) : [])];
+    const parallel = (id: SignId) => id === "220" || id === "1000-32";
+    const exiting = [...(spec.exitSigns ?? []).filter((id) => !parallel(id)), ...(spec.zebra ? (["350"] as const) : [])];
     if (exiting.length) group.add(signPost(exiting, info, at(edge + 0.6, exitRight), out.clone().negate()));
-    if (spec.exitSigns?.includes("220")) {
-      group.add(signPost(["220"], info, at(edge + 4, exitRight), rightOf(out).negate(), 2.6));
-    }
+    const along = (spec.exitSigns ?? []).filter(parallel);
+    if (along.length) group.add(signPost(along, info, at(edge + 4, exitRight), rightOf(out).negate(), 2.8));
   }
   return { group, lights };
 }

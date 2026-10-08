@@ -1,4 +1,5 @@
 import { speak, stopSpeaking } from "./audio";
+import type { RuleCard } from "./types";
 
 // Plain DOM overlay, smartphone portrait first: everything you tap lives in a dock at the
 // bottom (thumb reach), stacked so panels never overlap. Short sentences — readers are 8–10.
@@ -24,16 +25,58 @@ function setLabel(b: HTMLElement, icon: string, text: string, iconAfter = false)
   b.replaceChildren(...(iconAfter ? [txt, ico] : [ico, txt]));
 }
 
+/**
+ * Turns a button into a Vorlesen/Stopp toggle. Both labels share one fixed-size button so it
+ * doesn't jump when switching. Returns a reset for when the text goes away.
+ */
+function readToggle(b: HTMLElement, text: () => string) {
+  let reading = false;
+  const label = (on: boolean) => ((reading = on), on ? setLabel(b, "⏹", "Stopp") : setLabel(b, "🔊", "Vorlesen"));
+  label(false);
+  b.addEventListener("click", () => {
+    if (reading) {
+      stopSpeaking();
+      return label(false);
+    }
+    label(true);
+    speak(text(), () => label(false));
+  });
+  return () => label(false);
+}
+
 export interface Chip {
   id: string;
   label: string;
   color: string; // CSS colour of the participant, so kids match chip and vehicle
 }
 
+export interface MapLevel {
+  title: string;
+  icon: string;
+  solved: number;
+  stars: number;
+  n: number;
+  locked: boolean;
+}
+
+export interface SheetEntry {
+  canvas: HTMLCanvasElement;
+  name: string;
+  text: string;
+}
+
 export function createUI(root: HTMLElement) {
   const top = el("div", "top", root);
+  const menu = el("button", "menu-btn", top, "☰");
   const title = el("h1", "title", top);
   const task = el("p", "task", top);
+  // Skip back and forth inside a level — kids want to retry one or peek at the next.
+  const steps = el("div", "steps", top);
+  const prev = el("button", "step-btn", steps, "‹");
+  const count = el("span", "", steps);
+  const fwd = el("button", "step-btn", steps, "›");
+  prev.ariaLabel = "Vorherige Aufgabe";
+  fwd.ariaLabel = "Nächste Aufgabe";
 
   const banner = el("div", "banner hidden", root, "Achtung!");
   const hint = el("div", "hint hidden", root, "👀 Wische zur Seite, um dich umzuschauen");
@@ -42,7 +85,9 @@ export function createUI(root: HTMLElement) {
   const result = el("div", "result hidden", dock);
   const resultHead = el("h2", "", result);
   const resultText = el("p", "", result);
-  const read = el("button", "btn small", result);
+  const resultBtns = el("div", "row", result);
+  const read = el("button", "btn small", resultBtns);
+  const ruleBtn = el("button", "btn small", resultBtns);
   const cards = el("div", "cards hidden", dock);
   const chips = el("div", "chips hidden", dock);
   const bar = el("div", "bar", dock);
@@ -52,21 +97,119 @@ export function createUI(root: HTMLElement) {
   setLabel(reset, "↺", "Nochmal");
   setLabel(next, "➜", "Weiter", true);
 
-  let reading = false;
-  const readLabel = (on: boolean) => ((reading = on), on ? setLabel(read, "⏹", "Stopp") : setLabel(read, "🔊", "Vorlesen"));
-  readLabel(false);
-  read.addEventListener("click", () => {
-    if (reading) {
-      stopSpeaking();
-      return readLabel(false);
-    }
-    readLabel(true);
-    speak(`${resultHead.textContent} ${resultText.textContent}`, () => readLabel(false));
-  });
+  const resetRead = readToggle(read, () => `${resultHead.textContent} ${resultText.textContent}`);
 
   const chipEls = new Map<string, HTMLButtonElement>();
 
+  // Full-screen panels on top of the scene: level map, rule card, cheat sheet.
+  const map = el("div", "screen hidden", root);
+  const modal = el("div", "modal hidden", root);
+  const sheet = el("div", "sheet", modal);
+  modal.addEventListener("click", (e) => e.target === modal && closeModal());
+  function closeModal() {
+    stopSpeaking();
+    modal.classList.add("hidden");
+  }
+  function openModal(build: (into: HTMLElement) => void) {
+    sheet.replaceChildren();
+    build(sheet);
+    const close = el("button", "btn primary close", sheet);
+    setLabel(close, "✓", "Schließen");
+    close.addEventListener("click", closeModal);
+    modal.classList.remove("hidden");
+    sheet.scrollTop = 0;
+  }
+
+  let onRule = () => {};
+  ruleBtn.addEventListener("click", () => onRule());
+
   return {
+    onMenu: (f: () => void) => menu.addEventListener("click", f),
+
+    /**
+     * Level overview. Locked levels say what is missing instead of just showing a lock.
+     * `close` (only when opened from a running task) adds a big "back" button in thumb reach.
+     */
+    showMap(levels: MapLevel[], o: {
+      pick: (i: number) => void;
+      openSheet: () => void;
+      free: boolean;
+      setFree: (on: boolean) => void;
+      close?: () => void;
+    }) {
+      map.replaceChildren();
+      const head = el("div", "map-head", map);
+      el("h1", "", head, "🚲 Fahrrad-Führerschein");
+      const cheat = el("button", "btn", head);
+      setLabel(cheat, "📖", "Spickzettel");
+      cheat.addEventListener("click", o.openSheet);
+      const list = el("div", "levels", map);
+      levels.forEach((l, i) => {
+        const b = el("button", `level${l.locked ? " locked" : ""}`, list);
+        el("span", "level-icon", b, l.locked ? "🔒" : l.icon);
+        const info = el("span", "level-info", b);
+        el("strong", "", info, `${i + 1}. ${l.title}`);
+        el("span", "level-sub", info, l.locked
+          ? "Schaffe erst das Level davor."
+          : `${"★".repeat(l.stars)}${"☆".repeat(l.n - l.stars)}  ${l.solved}/${l.n} geschafft`);
+        if (!l.locked) b.addEventListener("click", () => o.pick(i));
+      });
+      const free = el("label", "free", map);
+      const box = el("input", "", free);
+      box.type = "checkbox";
+      box.checked = o.free;
+      box.addEventListener("change", () => o.setFree(box.checked));
+      el("span", "", free, "🔓 Alle Level frei wählen");
+      if (o.close) {
+        const back = el("button", "btn primary map-close", map);
+        setLabel(back, "←", "Zurück zur Aufgabe");
+        back.addEventListener("click", o.close);
+      }
+      map.classList.remove("hidden");
+    },
+    hideMap: () => map.classList.add("hidden"),
+
+    showCard(card: RuleCard, signs: HTMLCanvasElement[]) {
+      openModal((s) => {
+        el("h2", "", s, card.title);
+        if (signs.length) {
+          const row = el("div", "card-signs", s);
+          for (const c of signs) row.appendChild(c);
+        }
+        el("p", "", s, card.text);
+        const src = el("a", "source", s, `Quelle: ${card.source}`);
+        src.href = card.url;
+        src.target = "_blank";
+        src.rel = "noopener";
+        readToggle(el("button", "btn small", s), () => `${card.title}. ${card.text}`);
+      });
+    },
+
+    /** Spickzettel: all rules (with source) first, then every sign. */
+    showSheet(cards: RuleCard[], entries: SheetEntry[]) {
+      openModal((s) => {
+        el("h2", "", s, "📖 Spickzettel");
+        el("h3", "", s, "Regeln");
+        for (const c of cards) {
+          const row = el("div", "sheet-rule", s);
+          el("strong", "", row, c.title);
+          el("p", "", row, c.text);
+          const src = el("a", "source", row, `Quelle: ${c.source}`);
+          src.href = c.url;
+          src.target = "_blank";
+          src.rel = "noopener";
+        }
+        el("h3", "", s, "Verkehrszeichen");
+        for (const e of entries) {
+          const row = el("div", "sheet-row", s);
+          row.appendChild(e.canvas);
+          const t = el("div", "", row);
+          el("strong", "", t, e.name);
+          el("p", "", t, e.text);
+        }
+      });
+    },
+
     setView(mode: "bird" | "ego") {
       if (mode === "bird") setLabel(view, "🚲", "Vom Rad");
       else setLabel(view, "🦅", "Von oben");
@@ -107,16 +250,26 @@ export function createUI(root: HTMLElement) {
         pick(i);
       }));
     },
-    showScenario(t: string, taskText: string) {
+    /** `pos` = place in the level, for the ‹ 2 von 5 › stepper. */
+    showScenario(t: string, taskText: string, pos: { i: number; n: number }) {
+      count.textContent = `Aufgabe ${pos.i + 1} von ${pos.n}`;
+      prev.disabled = pos.i === 0;
+      fwd.disabled = pos.i === pos.n - 1;
       stopSpeaking();
-      readLabel(false);
+      resetRead();
       title.textContent = t;
       task.textContent = taskText;
       result.classList.add("hidden");
       cards.classList.add("hidden");
       next.classList.add("hidden");
     },
-    showResult(ok: boolean, explain: string) {
+    /** `rule` adds a button to the result sheet that opens the Lernkarte. */
+    showResult(ok: boolean, explain: string, rule?: { title: string; open: () => void }) {
+      ruleBtn.classList.toggle("hidden", !rule);
+      if (rule) {
+        setLabel(ruleBtn, "📖", "Regel");
+        onRule = rule.open;
+      }
       banner.classList.add("hidden");
       chips.classList.add("hidden"); // the sheet needs the room on a phone
       result.classList.remove("hidden");
@@ -127,12 +280,16 @@ export function createUI(root: HTMLElement) {
     },
     hideResult() {
       stopSpeaking();
-      readLabel(false);
+      resetRead();
       result.classList.add("hidden");
       banner.classList.add("hidden");
       chips.classList.toggle("hidden", !chipEls.size);
     },
     showBanner: () => banner.classList.remove("hidden"),
+    onStep(f: (delta: number) => void) {
+      prev.addEventListener("click", () => f(-1));
+      fwd.addEventListener("click", () => f(1));
+    },
     onReset: (f: () => void) => reset.addEventListener("click", f),
     onNext: (f: () => void) => next.addEventListener("click", f),
   };

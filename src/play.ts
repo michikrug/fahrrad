@@ -68,8 +68,8 @@ export function schedule(groups: Actor[][], t0 = 0): { runs: Run[]; end: number 
   return { runs, end: t };
 }
 
-/** Closest approach of two driving lines, as distance along each path — or null if they never meet. */
-function conflictPoint(a: Actor, b: Actor): [number, number] | null {
+/** Closest approach of two driving lines: distance along each path and the spot — or null if they never meet. */
+function conflictPoint(a: Actor, b: Actor): [number, number, THREE.Vector3] | null {
   const N = 150;
   const pa = a.path.getSpacedPoints(N);
   const pb = b.path.getSpacedPoints(N);
@@ -79,7 +79,7 @@ function conflictPoint(a: Actor, b: Actor): [number, number] | null {
     if (d < best) [best, ia, ib] = [d, i, j];
   }
   if (best > 1.5 ** 2) return null;
-  return [(ia / N) * a.path.getLength(), (ib / N) * b.path.getLength()];
+  return [(ia / N) * a.path.getLength(), (ib / N) * b.path.getLength(), pa[ia].clone().lerp(pb[ib], 0.5)];
 }
 
 /**
@@ -87,7 +87,9 @@ function conflictPoint(a: Actor, b: Actor): [number, number] | null {
  * and the one with priority set off timed to reach the crossing point together.
  * Returns null when their lines don't cross — then we just play the tapped order.
  */
-export function nearMissSchedule(byId: Map<string, Actor>, tapped: string[], index: number, expected: string): { runs: Run[]; pair: [Actor, Actor] } | null {
+export function nearMissSchedule(
+  byId: Map<string, Actor>, tapped: string[], index: number, expected: string,
+): { runs: Run[]; pair: [Actor, Actor]; at: THREE.Vector3 } | null {
   const x = byId.get(tapped[index])!;
   const y = byId.get(expected)!;
   const hit = conflictPoint(x, y);
@@ -95,8 +97,17 @@ export function nearMissSchedule(byId: Map<string, Actor>, tapped: string[], ind
   const before = schedule(tapped.slice(0, index).map((id) => [byId.get(id)!]));
   const tx = hit[0] / x.speed, ty = hit[1] / y.speed;
   before.runs.push({ a: x, start: before.end + Math.max(0, ty - tx) }, { a: y, start: before.end + Math.max(0, tx - ty) });
-  return { runs: before.runs, pair: [x, y] };
+  return { runs: before.runs, pair: [x, y], at: hit[2] };
 }
 
 /** Gap at which the watched pair freezes: close enough to scare, never touching. */
 export const nearMissDist = (x: Actor, y: Actor) => ((x.len + y.len) / 2) * 0.55 + 1.2;
+
+/**
+ * Freeze only near the spot where the two lines cross. Otherwise a car following a bike on the
+ * same approach (right-hook scenario) "nearly hits" it from behind before the actual conflict.
+ */
+export function isNearMiss(x: Actor, y: Actor, at: THREE.Vector3) {
+  const close = x.obj.position.distanceTo(y.obj.position) < nearMissDist(x, y);
+  return close && Math.min(x.obj.position.distanceTo(at), y.obj.position.distanceTo(at)) < 3;
+}

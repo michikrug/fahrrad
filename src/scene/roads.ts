@@ -48,14 +48,17 @@ export interface Lane {
 /**
  * Driving line from the waiting position through the junction and out.
  * `offset` = distance from road centre line (cars ~1.75, bikes near the curb).
+ * `entryOffset` differs when the vehicle has moved over before turning (bikes turning left wait at the centre).
  */
-export function lanePath(layout: Layout, from: Arm, move: Move, offset: number, len: number, inRing = false): Lane {
+export function lanePath(
+  layout: Layout, from: Arm, move: Move, offset: number, len: number, inRing = false, back = 0, entryOffset = offset,
+): Lane {
   const to = exitArm(from, move);
-  const inRight = rightOf(DIR[from].clone().negate()).multiplyScalar(offset);
+  const inRight = rightOf(DIR[from].clone().negate()).multiplyScalar(entryOffset);
   const outRight = rightOf(DIR[to]).multiplyScalar(offset);
   const P = (s: number) => DIR[from].clone().multiplyScalar(s).add(inRight);
   const Q = (s: number) => DIR[to].clone().multiplyScalar(s).add(outRight);
-  const wait = stopLine(layout, from) + 0.8 + len / 2;
+  const wait = stopLine(layout, from) + 0.8 + len / 2 + back;
   const edge = edgeDist(layout);
 
   if (layout.roundabout) {
@@ -86,7 +89,8 @@ export function lanePath(layout: Layout, from: Arm, move: Move, offset: number, 
 /** Pedestrian walking across an arm on its crossing (or just past the junction if there is none). */
 export function crossPath(layout: Layout, arm: Arm, side: 1 | -1): Lane {
   const [a, b] = crossingBand(layout);
-  const s = hasCrossing(layout.arms[arm]) ? (a + b) / 2 : edgeDist(layout) + 1.5;
+  // Walkers from opposite sides keep to their right half of the crossing, so they pass instead of colliding.
+  const s = (hasCrossing(layout.arms[arm]) ? (a + b) / 2 : edgeDist(layout) + 1.5) + side * 0.6;
   // Start mid-sidewalk, clear of the sign posts at the curb.
   const across = rightOf(DIR[arm]).multiplyScalar(ROAD_HALF + 1.9);
   const at = DIR[arm].clone().multiplyScalar(s);

@@ -9,12 +9,14 @@ const RED = "#c1121c", BLUE = "#1d5fae", YELLOW = "#f7c600", WHITE = "#fff", BLA
 const PX = 256; // canvas pixels per sign "unit" (the longer side)
 
 type Ctx = CanvasRenderingContext2D;
-interface Info { layout: Layout; arm: Arm }
+interface Info { layout: Layout; arm: Arm; flip?: boolean }
 interface SignDef {
   w: number; // metres (real signs are ~0.6–0.9 m)
   h: number;
   shape: (c: Ctx, W: number, H: number) => void; // outline path, also used for the grey back side
   paint: (c: Ctx, W: number, H: number, info: Info) => void;
+  /** Printed on both faces (like real one-way signs); the back gets `flip` so arrows keep their world direction. */
+  twoSided?: boolean;
 }
 
 /** Regular polygon path around the canvas centre; `rot` in degrees, 0 = first vertex pointing right. */
@@ -167,12 +169,13 @@ const SIGNS: Record<SignId, SignDef> = {
   },
   // Einbahnstraße — arrow points left because the sign is mounted parallel to the road (see placement).
   "220": {
-    w: 1.0, h: 0.33,
+    w: 1.0, h: 0.33, twoSided: true,
     shape: (c, W, H) => roundRect(c, 2, 2, W - 4, H - 4, 8),
-    paint: (c, W, H) => {
+    paint: (c, W, H, { flip }) => {
       roundRect(c, 2, 2, W - 4, H - 4, 8);
       fill(c, BLUE);
-      arrow(c, W * 0.93, W * 0.06, H / 2, H * 0.42, WHITE);
+      if (flip) arrow(c, W * 0.07, W * 0.94, H / 2, H * 0.42, WHITE);
+      else arrow(c, W * 0.93, W * 0.06, H / 2, H * 0.42, WHITE);
       c.fillStyle = BLACK;
       c.font = `700 ${H * 0.24}px Arial, sans-serif`;
       c.textAlign = "center";
@@ -282,6 +285,20 @@ const SIGNS: Record<SignId, SignDef> = {
       }
     },
   },
+  // Zusatzzeichen under Z. 220: bikes may ride against the one-way direction (number not confirmed in the legal text)
+  "1000-32": {
+    w: 0.6, h: 0.33, twoSided: true,
+    shape: (c, W, H) => roundRect(c, 2, 2, W - 4, H - 4, 6),
+    paint: (c, W, H) => {
+      roundRect(c, 2, 2, W - 4, H - 4, 6);
+      fill(c, BLACK);
+      roundRect(c, 6, 6, W - 12, H - 12, 4);
+      fill(c, WHITE);
+      bikeIcon(c, W * 0.28, H * 0.5, H * 0.4, BLACK);
+      arrow(c, W * 0.55, W * 0.9, H * 0.33, H * 0.1, BLACK);
+      arrow(c, W * 0.9, W * 0.55, H * 0.67, H * 0.1, BLACK);
+    },
+  },
   // Zusatzzeichen "Radverkehr frei"
   "1022-10": {
     w: 0.6, h: 0.33,
@@ -308,7 +325,8 @@ export function signCanvas(id: SignId, info: Info, back = false): HTMLCanvasElem
   canvas.width = Math.round(def.w * k);
   canvas.height = Math.round(def.h * k);
   const c = canvas.getContext("2d")!;
-  if (back) {
+  if (back && def.twoSided) def.paint(c, canvas.width, canvas.height, { ...info, flip: true });
+  else if (back) {
     def.shape(c, canvas.width, canvas.height);
     fill(c, "#8a8f94");
   } else def.paint(c, canvas.width, canvas.height, info);
