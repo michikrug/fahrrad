@@ -91,7 +91,7 @@ const sourceLink = (parent: HTMLElement, card: RuleCard, prefix = "") => {
   a.rel = "noopener";
 };
 
-export interface SheetEntry {
+interface SheetEntry {
   canvas: HTMLCanvasElement;
   name: string;
   text: string;

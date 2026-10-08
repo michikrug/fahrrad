@@ -33,7 +33,7 @@ function house(r: () => number) {
   return g;
 }
 
-export function tree(r: () => number) {
+function tree(r: () => number) {
   const g = new THREE.Group();
   const trunk = new THREE.Mesh(geo.trunk, trunkMat);
   trunk.position.y = 1;
@@ -47,7 +47,7 @@ export function tree(r: () => number) {
 }
 
 /** Ground footprint (x/z extent, height flattened) of a house or tree, roof and crown included. */
-export function footprint(o: THREE.Object3D) {
+function footprint(o: THREE.Object3D) {
   const b = new THREE.Box3().setFromObject(o);
   b.min.y = 0;
   b.max.y = 0;

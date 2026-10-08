@@ -5,7 +5,7 @@ export const ARMS: Arm[] = ["N", "E", "S", "W"];
 export const ROAD_HALF = 3.5; // two 3.5 m lanes
 export const WALK = 2.5;
 export const CURB = 0.15;
-export const ARM_LEN = 45;
+const ARM_LEN = 45;
 // Roundabout: island radius and outer ring radius.
 const RING_IN = 5;
 export const RING_OUT = 11.5;
@@ -22,7 +22,7 @@ export const DIR: Record<Arm, THREE.Vector3> = {
 export const rightOf = (h: THREE.Vector3) => new THREE.Vector3(-h.z, 0, h.x);
 
 /** Arm a vehicle leaves through. Arms are clockwise, so a right turn is one step back. */
-export function exitArm(from: Arm, move: Move): Arm {
+function exitArm(from: Arm, move: Move): Arm {
   const step = { right: 3, straight: 2, left: 1 }[move];
   return ARMS[(ARMS.indexOf(from) + step) % 4];
 }

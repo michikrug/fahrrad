@@ -29,8 +29,6 @@ canvas { display: block; }
   background: var(--soft); color: var(--ink); font: 800 17px var(--font); min-height: 52px; padding: 0 14px; }
 .btn .ico { display: block; line-height: 1; font-size: 1.15em; }
 .btn.primary { background: var(--green); color: #fff; box-shadow: 0 5px 0 var(--green-d); }
-.btn.small { font-size: 15px; height: 42px; min-height: 0; min-width: 140px; margin-top: 8px; line-height: 1;
-  border-radius: 20px; background: var(--blue-soft); color: var(--blue); }
 
 /* Task HUD. Top: back button + task pill. Bottom: chips/cards over the question sheet. */
 .hud-top { position: absolute; top: calc(10px + env(safe-area-inset-top)); left: 10px; right: 10px;

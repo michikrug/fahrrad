@@ -101,7 +101,7 @@ export function nearMissSchedule(
 }
 
 /** Gap at which the watched pair freezes: close enough to scare, never touching. */
-export const nearMissDist = (x: Actor, y: Actor) => ((x.len + y.len) / 2) * 0.55 + 1.2;
+const nearMissDist = (x: Actor, y: Actor) => ((x.len + y.len) / 2) * 0.55 + 1.2;
 
 /**
  * Freeze only near the spot where the two lines cross. Otherwise a car following a bike on the

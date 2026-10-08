@@ -3,7 +3,7 @@ import type { Level } from "./types";
 // Progress lives in localStorage only — no accounts, nothing leaves the device.
 // Bump the key version if the shape changes; old progress is then simply ignored.
 
-export interface Result {
+interface Result {
   solved: boolean;
   firstTry: boolean; // solved without a wrong answer before — earns the star
 }

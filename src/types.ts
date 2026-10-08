@@ -3,7 +3,7 @@ import type { Groups } from "./check";
 /** Arms of the junction, clockwise. Screen-wise N is away from the default camera. */
 export type Arm = "N" | "E" | "S" | "W";
 export type Move = "straight" | "left" | "right";
-export type Kind = "car" | "bus" | "bike" | "player" | "pedestrian";
+type Kind = "car" | "bus" | "bike" | "player" | "pedestrian";
 
 /** StVO sign numbers we can draw. "1002" = Zusatzzeichen for the bending priority road (drawn from Layout.priority). */
 export type SignId =
@@ -42,7 +42,7 @@ export interface Layout {
   priority?: [Arm, Arm];
 }
 
-export interface Choice {
+interface Choice {
   question: string;
   options: string[];
   correct: number; // index into options

@@ -76,7 +76,7 @@ function bus() {
 }
 
 /** Cylinder from a to b — for frames and limbs. */
-export function tube(a: THREE.Vector3, b: THREE.Vector3, r: number, m: THREE.Material) {
+function tube(a: THREE.Vector3, b: THREE.Vector3, r: number, m: THREE.Material) {
   const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, a.distanceTo(b), 8), m);
   mesh.position.copy(a).lerp(b, 0.5);
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
