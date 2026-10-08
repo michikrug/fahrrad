@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- App icon: white bike on the player's orange. Full bleed, bike inside the maskable safe circle. -->
+  <rect width="512" height="512" fill="#ff7a00"/>
+  <g transform="translate(256 256) scale(0.8) translate(-256 -290)" fill="none" stroke="#fff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="140" cy="330" r="82"/>
+    <circle cx="372" cy="330" r="82"/>
+    <path d="M140 330 L250 330 L215 205 Z M215 205 L345 205 L250 330 M345 205 L372 330 M330 165 L345 205 M310 165 L355 165 M190 195 L245 195"/>
+  </g>
+</svg>

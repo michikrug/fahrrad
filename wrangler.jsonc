@@ -1,0 +1,10 @@
+// Cloudflare hosting: static files only, no Worker script. Deploy: npx vite build && npx wrangler deploy
+// HTTPS is the point: service workers (offline use) only run in a secure context.
+{
+  "name": "fahrrad",
+  "compatibility_date": "2026-10-06",
+  "assets": { "directory": "./dist" },
+  // No SPA fallback: every task is /?s=… on the start page, so a missing file should be a real 404.
+  "routes": [{ "pattern": "fahrrad.michikrug.de", "custom_domain": true }],
+  "workers_dev": false
+}

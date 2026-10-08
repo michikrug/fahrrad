@@ -335,3 +335,5 @@ if (new URLSearchParams(location.search).has("fps")) {
 
 // Dev only: lets headless tests inspect state from the console.
 if (import.meta.env.DEV) Object.assign(window, { world, rig });
+// Offline use (public/sw.js). Not in dev: a cached app would hide Vite's hot reload.
+if (import.meta.env.PROD && "serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");
