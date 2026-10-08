@@ -191,18 +191,18 @@ export function moverSound(kind: MoverKind): Voice {
 }
 
 /** Correct answer: a short fanfare — C–E–G rising, then a held high C; square + triangle for a brassy tone. */
-export function fanfare() {
+/** Short tune: `notes` are [frequency, start, length] in Hz and seconds, each played on every voice in `voices`. */
+function jingle(notes: number[][], voices: [OscillatorType, number][], volume: number, cutoff: number) {
   const { c, out: dest } = out();
   const now = c.currentTime;
   const bus = c.createGain();
-  bus.gain.value = 0.16;
+  bus.gain.value = volume;
   const lp = c.createBiquadFilter();
   lp.type = "lowpass";
-  lp.frequency.value = 3200;
+  lp.frequency.value = cutoff;
   lp.connect(bus).connect(dest);
-  // [frequency, start, length] in Hz and seconds
-  for (const [f, t, d] of [[523.25, 0, 0.13], [659.25, 0.13, 0.13], [783.99, 0.26, 0.13], [1046.5, 0.39, 0.55]]) {
-    for (const [type, level] of [["square", 0.35], ["triangle", 1]] as const) {
+  for (const [f, t, d] of notes) {
+    for (const [type, level] of voices) {
       const o = c.createOscillator();
       o.type = type;
       o.frequency.value = f;
@@ -216,6 +216,16 @@ export function fanfare() {
       o.stop(now + t + d + 0.2);
     }
   }
+}
+
+/** Correct answer: C–E–G, then the high C held. */
+export function fanfare() {
+  jingle([[523.25, 0, 0.13], [659.25, 0.13, 0.13], [783.99, 0.26, 0.13], [1046.5, 0.39, 0.55]], [["square", 0.35], ["triangle", 1]], 0.16, 3200);
+}
+
+/** Wrong answer: a soft falling "uh-oh" (G to E flat), no buzzer — it should not feel like a punishment. */
+export function oops() {
+  jingle([[392, 0, 0.16], [311.13, 0.2, 0.35]], [["triangle", 1], ["sine", 0.6]], 0.22, 1600);
 }
 
 /** Near miss: a honk if a car or bus is involved (`horn`), else the bell. */

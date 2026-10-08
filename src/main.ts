@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { fanfare, moverSound, nearMissSound, ringBell, setSound, type MoverKind, type Voice } from "./audio";
+import { fanfare, moverSound, oops, nearMissSound, ringBell, setSound, type MoverKind, type Voice } from "./audio";
 import { createCameraRig } from "./camera";
 import { firstMistake, isCorrect } from "./check";
 import { rules, signInfo } from "./content/rules";
@@ -51,7 +51,7 @@ function finish(ok: boolean) {
   const s = current();
   progress = record(progress, s.id, ok, mistakes === 0);
   saveProgress(progress);
-  if (!ok) mistakes++;
+  if (!ok) mistakes++, oops();
   else fanfare();
   const card = rules.find((r) => r.id === s.rule)!;
   ui.showResult(ok, s.explain, { title: card.title, open: () => showCard(card.id) });
@@ -180,7 +180,13 @@ function pick(id: string) {
 
 function askChoice() {
   const s = current();
-  ui.showChoice(s.choice!.options, (i) => finish(i === s.choice!.correct));
+  // Shuffled on every load: in the content the right answer is mostly first, and kids learn "always A".
+  const order = s.choice!.options.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  ui.showChoice(order.map((i) => s.choice!.options[i]), (i) => finish(order[i] === s.choice!.correct));
 }
 
 function reset() {
