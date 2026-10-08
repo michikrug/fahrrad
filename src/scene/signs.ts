@@ -5,7 +5,7 @@ import { ARMS, DIR, rightOf } from "./roads";
 // StVO signs drawn on canvas textures — no image files, and shapes/colours stay editable here.
 // ponytail: pictograms are simplified look-alikes, not the official vector artwork.
 
-const RED = "#c1121c", BLUE = "#1d5fae", YELLOW = "#f7c600", WHITE = "#fff", BLACK = "#111", GREEN = "#009650";
+const RED = "#c1121c", BLUE = "#17509a", YELLOW = "#f7c600", WHITE = "#fff", BLACK = "#111", GREEN = "#009650";
 const PX = 256; // canvas pixels per sign "unit" (the longer side)
 
 type Ctx = CanvasRenderingContext2D;
@@ -192,18 +192,36 @@ const SIGNS: Record<SignId, SignDef> = {
   },
   // Einbahnstraße — arrow points right: the sign hangs parallel to the road, facing away from it (see placement).
   "220": {
-    w: 1.0, h: 0.33, twoSided: true,
-    shape: (c, W, H) => roundRect(c, 2, 2, W - 4, H - 4, 8),
+    w: 1.0, h: 0.37, twoSided: true,
+    shape: (c, W, H) => roundRect(c, 1, 1, W - 2, H - 2, H * 0.12),
     paint: (c, W, H, { flip }) => {
-      roundRect(c, 2, 2, W - 4, H - 4, 8);
+      // White rim with a thin dark edge around the blue field, like the real plate.
+      roundRect(c, 1, 1, W - 2, H - 2, H * 0.12);
+      fill(c, WHITE);
+      c.strokeStyle = "#444";
+      c.lineWidth = 2;
+      c.stroke();
+      roundRect(c, W * 0.02, H * 0.05, W * 0.96, H * 0.9, H * 0.09);
       fill(c, BLUE);
-      if (flip) arrow(c, W * 0.93, W * 0.06, H / 2, H * 0.42, WHITE);
-      else arrow(c, W * 0.07, W * 0.94, H / 2, H * 0.42, WHITE);
+      // Arrow (points right unless `flip`): long shaft, big head with rounded corners.
+      const x = (u: number) => (flip ? W * (1 - u) : W * u);
+      c.beginPath();
+      for (const [u, v] of [[0.045, 0.335], [0.7, 0.335], [0.69, 0.13], [0.95, 0.5], [0.69, 0.87], [0.7, 0.665], [0.045, 0.665]])
+        c.lineTo(x(u), H * v);
+      c.closePath();
+      c.lineJoin = "round";
+      c.strokeStyle = WHITE;
+      c.lineWidth = H * 0.05;
+      c.stroke();
+      fill(c, WHITE);
+      // Narrow DIN-like lettering, left in the shaft; shrunk to fit if the font runs wide.
       c.fillStyle = BLACK;
-      c.font = `700 ${H * 0.24}px Arial, sans-serif`;
-      c.textAlign = "center";
+      c.font = `500 ${H * 0.28}px "DIN Alternate", "DIN Condensed", "Arial Narrow", Arial, sans-serif`;
+      const room = W * 0.6, w = c.measureText("Einbahnstraße").width;
+      if (w > room) c.font = c.font.replace(/[\d.]+px/, `${(H * 0.28 * room) / w}px`);
+      c.textAlign = flip ? "right" : "left";
       c.textBaseline = "middle";
-      c.fillText("Einbahnstraße", W * 0.55, H / 2);
+      c.fillText("Einbahnstraße", x(0.075), H * 0.51);
     },
   },
   // Verbot der Einfahrt
@@ -224,10 +242,10 @@ const SIGNS: Record<SignId, SignDef> = {
     paint: (c, W) => {
       warnTriangle(c, W);
       c.fillStyle = BLACK;
-      c.fillRect(W * 0.33, W * 0.6, W * 0.34, W * 0.06); // side road
-      c.beginPath(); // bold priority road: pointed top wider than the shaft, notched foot
-      for (const [x, y] of [[0.5, 0.34], [0.6, 0.47], [0.555, 0.47], [0.555, 0.86], [0.5, 0.81], [0.445, 0.86], [0.445, 0.47], [0.4, 0.47]])
-        c.lineTo(W * x, W * y);
+      c.fillRect(W * 0.345, W * 0.555, W * 0.31, W * 0.05); // side road
+      // Priority road: wide bar with a 45° roof on top and a deep V notch at the foot (Z. 301 artwork).
+      c.beginPath();
+      for (const [x, y] of [[0.5, 0.39], [0.58, 0.47], [0.58, 0.76], [0.5, 0.68], [0.42, 0.76], [0.42, 0.47]]) c.lineTo(W * x, W * y);
       c.closePath();
       c.fill();
     },
