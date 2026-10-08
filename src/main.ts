@@ -285,24 +285,26 @@ const voices = new Map<Actor, Voice>();
 const toCamera = new THREE.Vector3();
 const IDLE = 0.35;
 function updateSounds() {
-  const level = new Map<Actor, number>();
+  const level = new Map<Actor, { k: number; rev: number }>(); // volume factor, engine revving (0 idle, 1 driving)
   for (const r of sim?.runs ?? []) {
     if (r.a.d >= r.a.path.getLength()) continue;
     const motor = r.a.p.kind === "car" || r.a.p.kind === "bus";
-    // Bikes and walkers go quiet once past the junction: from the bike, the camera rides along, so your
-    // own tyres never fade with distance and would hum on under the result sheet.
-    if (!motor && r.a.d > r.a.clear + 2) continue;
-    if (r.started) level.set(r.a, 1);
-    else if (motor) level.set(r.a, IDLE);
+    // Everyone fades out over the first metres past the junction (cars over 10 m, bikes and walkers 6 m):
+    // the result sheet comes up then, and from the bike the camera rides along, so your own tyres would
+    // never fade with distance.
+    const fade = 1 - THREE.MathUtils.clamp((r.a.d - r.a.clear) / (motor ? 10 : 6), 0, 1);
+    if (fade <= 0) continue;
+    if (r.started) level.set(r.a, { k: fade, rev: 1 });
+    else if (motor) level.set(r.a, { k: IDLE, rev: 0 });
   }
   for (const [a, v] of voices) if (!level.has(a)) (v.stop(), voices.delete(a));
-  for (const [a, k] of level) {
+  for (const [a, { k, rev }] of level) {
     let v = voices.get(a);
     if (!v) voices.set(a, (v = moverSound((a.p.kind === "player" ? "bike" : a.p.kind) as MoverKind)));
     toCamera.copy(a.obj.position).applyMatrix4(world.camera.matrixWorldInverse);
     // Full volume within 12 m (the bike view), fading with distance; bird's-eye view sits ~30 m up.
     const gain = Math.min(1, 12 / Math.max(toCamera.length(), 1));
-    v.set(gain * k, THREE.MathUtils.clamp(toCamera.x / (Math.abs(toCamera.z) + 2), -1, 1) * 0.8, k === 1 ? 1 : 0);
+    v.set(gain * k, THREE.MathUtils.clamp(toCamera.x / (Math.abs(toCamera.z) + 2), -1, 1) * 0.8, rev);
   }
 }
 
