@@ -9,6 +9,24 @@ const ARM_LEN = 45;
 // Roundabout: island radius and outer ring radius.
 const RING_IN = 5;
 export const RING_OUT = 11.5;
+// Roundabout entries have a rounded curb corner, like real ones; lanes follow it at their usual distance.
+export const ENTRY_R = 3;
+// Where the rounded corner leaves the straight road edge, measured along the arm.
+const FILLET_ALONG = Math.sqrt((RING_OUT + ENTRY_R) ** 2 - (ROAD_HALF + ENTRY_R) ** 2);
+
+/**
+ * Line round an entry's curb corner at distance `gap` from the curb, from the arm's road edge side to the ring,
+ * as (along the arm, across it) pairs. All gaps share one centre, so a lane keeps its distance to the curb.
+ */
+function filletArc(gap: number): [number, number][] {
+  const [cx, cy] = [FILLET_ALONG, ROAD_HALF + ENTRY_R];
+  const r = ENTRY_R + gap;
+  const [t0, t1] = [-Math.PI / 2, Math.atan2(-cy, -cx)]; // straight edge, then where it touches the ring
+  return Array.from({ length: 9 }, (_, i) => {
+    const t = t0 + ((t1 - t0) * i) / 8;
+    return [cx + r * Math.cos(t), cy + r * Math.sin(t)];
+  });
+}
 
 /** Unit vector from the junction centre out along an arm. */
 export const DIR: Record<Arm, THREE.Vector3> = {
@@ -62,15 +80,20 @@ export function lanePath(
   const edge = edgeDist(layout);
 
   if (layout.roundabout) {
-    // Counter-clockwise seen from above, i.e. angle decreases. Ring lane keeps the same distance to the curb.
-    const R = RING_OUT - (ROAD_HALF - offset);
-    const angle = (a: Arm) => Math.atan2(DIR[a].z, DIR[a].x);
-    const a0 = angle(from) - 0.45;
-    let a1 = angle(to) + 0.45;
+    // Counter-clockwise seen from above, i.e. angle decreases. Lanes keep the same distance to the curb
+    // all the way: in along the arm, round the entry's curb corner, round the ring, out round the next corner.
+    const gap = ROAD_HALF - offset;
+    const R = RING_OUT - gap;
+    const inSide = rightOf(DIR[from].clone().negate());
+    const entry = filletArc(gap).map(([a, l]) => DIR[from].clone().multiplyScalar(a).addScaledVector(inSide, l));
+    const exit = filletArc(gap).reverse().map(([a, l]) => DIR[to].clone().multiplyScalar(a).addScaledVector(rightOf(DIR[to]), l));
+    const angle = (p: THREE.Vector3) => Math.atan2(p.z, p.x);
+    const a0 = angle(entry.at(-1)!);
+    let a1 = angle(exit[0]);
     while (a1 >= a0) a1 -= Math.PI * 2;
-    const pts = inRing ? [] : [P(wait), P(edge + 1)];
+    const pts = inRing ? [] : [P(wait), ...entry.slice(0, -1)];
     for (let a = a0; a > a1; a -= 0.2) pts.push(new THREE.Vector3(R * Math.cos(a), 0, R * Math.sin(a)));
-    pts.push(Q(edge + 1), Q(edge + 6), Q(ARM_LEN));
+    pts.push(...exit, Q(edge + 6), Q(ARM_LEN));
     const path = new THREE.CatmullRomCurve3(pts, false, "centripetal");
     return { path, clear: path.getLength() - (ARM_LEN - edge - 1), enter: inRing ? 0 : wait - edge };
   }
@@ -151,12 +174,15 @@ function ringCorner(u: THREE.Vector3, v: THREE.Vector3) {
   };
   const [inner, outer, end] = [ROAD_HALF, ROAD_HALF + WALK, RING_WALK_END];
   const rOut = RING_OUT + WALK;
-  const a0 = Math.atan2(inner, Math.sqrt(RING_OUT ** 2 - inner ** 2)); // ring curb meets the road edge
+  const curb = filletArc(0); // u's road edge round the corner to the ring
+  const a0 = Math.atan2(curb.at(-1)![1], curb.at(-1)![0]); // where the rounded corner meets the ring curb
   const a1 = Math.atan2(outer, Math.sqrt(rOut ** 2 - outer ** 2)); // outer arc meets the sidewalk's back edge
   pts.push([end, inner], [end, outer]);
   arc(rOut, a1, Math.PI / 2 - a1);
   pts.push([outer, end], [inner, end]);
+  pts.push(...curb.map(([a, l]): [number, number] => [l, a])); // v's corner, mirrored
   arc(RING_OUT, Math.PI / 2 - a0, a0);
+  pts.push(...curb.reverse());
   // Shape is drawn in x/-z so that rotating it flat makes the extrusion point up.
   const shape = new THREE.Shape(pts.map(([a, b]) => {
     const w = u.clone().multiplyScalar(a).addScaledVector(v, b);
@@ -174,7 +200,8 @@ export function buildRoads(layout: Layout): THREE.Group {
   const isNS = (arm: Arm) => arm === "N" || arm === "S";
 
   if (layout.roundabout) {
-    g.add(ring(0, RING_OUT, mat.asphalt, 0.02));
+    // Reaches into the rounded entry corners; the raised sidewalk pieces cover the rest of it.
+    g.add(ring(0, Math.hypot(FILLET_ALONG, ROAD_HALF), mat.asphalt, 0.02));
     const island = new THREE.Mesh(new THREE.CylinderGeometry(RING_IN, RING_IN + 0.3, 0.3, 48), mat.island);
     island.position.y = 0.15;
     island.receiveShadow = true;
