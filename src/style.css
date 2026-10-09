@@ -232,6 +232,16 @@ canvas { display: block; }
 .done-stats span { font: 700 13px var(--font); opacity: .85; }
 .modal.full p { color: #fff; margin: 4px 0 6px; font-weight: 600; }
 .modal.full .close { background: #ffffff26; color: #fff; }
+/* Exam passed: festive gradient, a trophy turning like a coin, confetti over everything (taps go through). */
+.modal.finale { background: linear-gradient(#2d6ad8, #6a3fc4); }
+.trophy { font-size: clamp(88px, 28vw, 130px); line-height: 1.1; margin-bottom: 8px;
+  filter: drop-shadow(0 0 28px #ffd54a99); animation: spin 3.2s linear infinite; }
+@keyframes spin { from { transform: perspective(600px) rotateY(0); } to { transform: perspective(600px) rotateY(360deg); } }
+.confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.modal.finale .sheet > :not(.confetti) { position: relative; z-index: 1; } /* text and button stay readable */
+.confetti i { position: absolute; top: -20px; width: 9px; height: 15px; border-radius: 2px; animation: fall linear infinite; }
+@keyframes fall { to { transform: translateY(calc(100vh + 40px)) rotate(var(--spin)); } }
+@media (prefers-reduced-motion: reduce) { .trophy, .confetti i { animation: none; } .confetti { display: none; } }
 /* Lernkarte: same build as the feedback sheet — badge on the top edge (here white, holding the sign),
    centred text, pill, one big button. Not scrollable as a whole, or the badge would be clipped. */
 .modal.rule .sheet { position: relative; overflow: visible; max-height: none; margin-top: 46px; padding-top: 66px; text-align: center; }

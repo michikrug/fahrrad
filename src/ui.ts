@@ -195,6 +195,33 @@ export function createUI(root: HTMLElement) {
     sheet.scrollTop = 0;
   }
 
+  /** Exam passed: the big moment, with a spinning trophy and falling confetti. */
+  function showFinale(o: { stars: number; n: number; total: { solved: number; n: number } }, toMap: () => void) {
+    openModal((s) => {
+      el("div", "trophy", s, "🏆");
+      el("div", "done-kicker", s, "Abschlussprüfung bestanden");
+      el("h2", "", s, "Du bist fit fürs Fahrrad!");
+      const stats = el("div", "done-stats", s);
+      for (const [v, label] of [[`${o.stars}/${o.n}`, "ohne Fehler"], [`${o.total.solved}/${o.total.n}`, "Aufgaben gesamt"]]) {
+        const c = el("div", "", stats);
+        el("strong", "", c, v);
+        el("span", "", c, label);
+      }
+      el("p", "", s, "Du kennst jetzt die wichtigsten Regeln. Fahr immer aufmerksam und trag deinen Helm!");
+      // Plain CSS confetti: each piece gets its own spot, colour, speed and start, then falls on a loop.
+      const rain = el("div", "confetti", s);
+      const colors = ["#f7b500", "#ff7a00", "#2fa84f", "#e23d6e", "#16a3a3", "#fff"];
+      for (let i = 0; i < 60; i++) {
+        const c = el("i", "", rain);
+        c.style.left = `${Math.random() * 100}%`;
+        c.style.background = colors[i % colors.length];
+        c.style.animationDuration = `${3 + Math.random() * 3}s`;
+        c.style.animationDelay = `${-Math.random() * 6}s`; // negative: already mid-fall when the screen opens
+        c.style.setProperty("--spin", `${(Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 720)}deg`);
+      }
+    }, { icon: "", text: "Zu den Aufgaben", then: toMap, primary: false }, "full finale");
+  }
+
   let onRule = () => {};
   ruleBtn.addEventListener("click", () => onRule());
   let mapTab: "karte" | "spick" | "settings" = "karte";
@@ -373,8 +400,9 @@ export function createUI(root: HTMLElement) {
       },
       go: { map: () => void; next: () => void },
     ) {
+      const done = o.missing === 0;
+      if (done && o.last) return showFinale(o, go.map);
       openModal((s) => {
-        const done = o.missing === 0;
         el("div", "done-kicker", s, done ? `Level ${o.number} geschafft` : `Level ${o.number}: fast geschafft`);
         el("h2", "", s, o.title);
         // Stars on a gentle arch, the middle ones highest; earned ones gold, the rest outlined.
@@ -393,7 +421,6 @@ export function createUI(root: HTMLElement) {
           el("span", "", c, label);
         }
         if (!done) el("p", "", s, `Löse noch ${o.missing} ${o.missing === 1 ? "Aufgabe" : "Aufgaben"}, dann ist das Level geschafft.`);
-        else if (o.last) el("p", "", s, "Du hast die Abschlussprüfung geschafft! 🏆");
         if (o.next) {
           const b = el("button", "btn3d orange wide", s, `Nächstes Level: ${o.next}`);
           b.addEventListener("click", () => ((afterClose = go.next), closeModal()));
