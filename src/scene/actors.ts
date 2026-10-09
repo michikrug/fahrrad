@@ -149,7 +149,7 @@ function bike(shirt: number, helmet: number) {
     const shoulder = v(x * 0.17, 1.36, 0.0);
     const rest = tube(shoulder, v(x * 0.27, bar.y + 0.03, bar.z), 0.05, top);
     rest.userData.rest = true; // shown unless this side signals
-    const out = box(0.6, 0.11, 0.11, top, x * 0.5, shoulder.y, shoulder.z);
+    const out = tube(shoulder, v(x * 0.8, shoulder.y, shoulder.z), 0.05, top);
     out.visible = false;
     for (const a of [rest, out]) a.userData.rider = a.userData.arm = true;
     g.add(rest, out);
