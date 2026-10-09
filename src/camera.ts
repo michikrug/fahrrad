@@ -115,12 +115,16 @@ export function createCameraRig(world: World) {
   let yaw = 0, dragging = false, lastX = 0;
 
   const turnAround = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
-  // Look ~17° down: the road fills portrait screens, and the handlebar stays above the dock in landscape.
-  const tilt = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -0.3);
+  // Ahead: look ~17° down, so the road fills portrait screens and the handlebar stays above the dock in landscape.
+  // Turning the head lifts the view to ~14° up: your own sign stands right beside the stop line, about 35° above
+  // eye level, out of a landscape screen's shorter vertical view otherwise.
+  const tilt = new THREE.Quaternion();
+  const X = new THREE.Vector3(1, 0, 0);
   function egoPose() {
     const a = rider!;
     const pos = eyeOf(a.obj);
-    // Models face +z, cameras look along -z: turn around, then look-around yaw, then a slight downward tilt.
+    tilt.setFromAxisAngle(X, -0.3 + 0.55 * Math.min(1, Math.abs(yaw) / 0.8));
+    // Models face +z, cameras look along -z: turn around, then look-around yaw, then the tilt.
     const look = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
     const quat = a.obj.quaternion.clone().multiply(turnAround).multiply(look).multiply(tilt);
     return { pos, quat };
