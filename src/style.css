@@ -144,13 +144,15 @@ canvas { display: block; }
 
 /* Levels as stops on a path: a dotted line runs behind the number badges and shows in the gaps. */
 .levels { position: relative; display: flex; flex-direction: column; gap: 12px; }
-.levels::before { content: ""; position: absolute; left: 44px; top: 24px; bottom: 24px; border-left: 4px dotted #b8c7d9; }
+/* Dotted path through the middle of the number circles and the current level's tile: both sit in a 56px slot
+   16px from the card edge (the current card's 3px border is taken off its padding), so the centre is at 44px. */
+.levels::before { content: ""; position: absolute; left: 42px; top: 24px; bottom: 24px; border-left: 4px dotted #b8c7d9; }
 .level { position: relative; display: flex; align-items: center; gap: 14px; text-align: left; border: none;
   border-radius: var(--radius); background: var(--card); padding: 14px 16px; box-shadow: var(--shadow);
   color: var(--ink); font: inherit; min-height: 72px; }
-.level.next { border: 3px solid var(--orange); padding: 12px 14px; box-shadow: 0 5px 0 #ffb066, var(--shadow-lift); }
+.level.next { border: 3px solid var(--orange); padding: 12px 13px; box-shadow: 0 5px 0 #ffb066, var(--shadow-lift); }
 .level.locked { background: #ffffff99; box-shadow: none; color: #8796ab; }
-.level-num { flex: none; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
+.level-num { flex: none; width: 48px; height: 48px; margin: 0 4px; border-radius: 50%; display: grid; place-items: center;
   font: 900 18px var(--font); background: var(--blue-soft); color: var(--blue); }
 .level.locked .level-num { background: #e3e9f1; color: #8796ab; }
 .level.done .level-num { background: var(--green); color: #fff; font-size: 22px; }
