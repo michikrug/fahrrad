@@ -90,7 +90,7 @@ function showMap() {
   const next = levels.findIndex((_, i) => !locked[i] && need(i) > 0);
   // Only the first locked level says what is missing; repeating it on every one is noise.
   const firstLocked = locked.indexOf(true);
-  const hint = (i: number) => `Noch ${need(i)} ${need(i) === 1 ? "Aufgabe" : "Aufgaben"} in „${levels[i].title}“`;
+  const hint = (i: number) => `Löse noch ${need(i)} ${need(i) === 1 ? "Aufgabe" : "Aufgaben"} in „${levels[i].title}“`;
   ui.showMap(
     levels.map((l, i) => ({
       ...l, ...stats[i], locked: locked[i], done: need(i) === 0, next: i === next,
