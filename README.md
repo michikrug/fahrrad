@@ -13,6 +13,7 @@ explained in child-friendly German, with a source in the StVO.
   <img src="docs/screenshots/choice.png" width="180" alt="Choice question in the cyclist's own view at a green arrow">
   <img src="docs/screenshots/roundabout.png" width="180" alt="Roundabout task from above">
   <img src="docs/screenshots/signs.png" width="180" alt="Cheat sheet with traffic signs, each can be read aloud">
+  <img src="docs/screenshots/finale.png" width="180" alt="Exam passed: spinning trophy and falling confetti">
 </p>
 
 Built with Vite, TypeScript and three.js. All 3D models, traffic signs and sounds are generated in code; no asset files.
