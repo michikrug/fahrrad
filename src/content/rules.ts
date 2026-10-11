@@ -108,7 +108,7 @@ export const rules: RuleCard[] = [
     id: "kreisverkehr",
     title: "Kreisverkehr",
     text: "Wer schon im Kreisverkehr fährt, hat Vorfahrt. Beim Hineinfahren gibst du kein Zeichen. Beim Hinausfahren zeigst du mit dem rechten Arm, dass du abbiegst.",
-    signs: ["215", "205"],
+    signs: ["205", "215"],
     source: "§ 8 Abs. 1a und § 9 Abs. 1 StVO",
     url: `${STVO}__8.html`,
   },

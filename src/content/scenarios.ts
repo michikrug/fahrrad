@@ -22,7 +22,7 @@ const lights = (ns: Phase, ew: Phase, extra: Partial<Record<Arm, ArmSpec>> = {})
 };
 const roundabout: Layout = {
   roundabout: true,
-  arms: { N: { signs: ["215", "205"] }, E: { signs: ["215", "205"] }, S: { signs: ["215", "205"] }, W: { signs: ["215", "205"] } },
+  arms: { N: { signs: ["205", "215"] }, E: { signs: ["205", "215"] }, S: { signs: ["205", "215"] }, W: { signs: ["205", "215"] } },
 };
 const bend = (priority: [Arm, Arm]): Layout => ({
   priority,
