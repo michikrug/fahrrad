@@ -313,7 +313,6 @@ const L5: Scenario[] = [
       options: ["Absteigen und das Rad schieben", "Schnell hinüberfahren", "Klingeln und weiterfahren"],
       correct: 0,
     },
-    play: { groups: [["you"]] },
     explain: "Am Zebrastreifen steigst du ab und schiebst dein Rad. Dann bist du ein Fußgänger, und die Autos müssen dich hinüberlassen.",
   },
   {
@@ -329,7 +328,6 @@ const L5: Scenario[] = [
       ],
       correct: 0,
     },
-    play: { groups: [["you"]] },
     explain: "Wenn du fährst, müssen die Autos dich nicht vorlassen. Wenn du schiebst, bist du ein Fußgänger und hast Vorrang. Fahren ist nicht verboten, aber schieben ist sicherer.",
   },
 ];
@@ -515,7 +513,6 @@ const L9: Scenario[] = [
       options: ["Schnell hinüberfahren, die Autos bremsen schon", "Absteigen und das Rad schieben", "Klingeln und weiterfahren"],
       correct: 1,
     },
-    play: { groups: [["you"]] },
     explain: "Am Zebrastreifen steigst du ab und schiebst dein Rad. Dann bist du ein Fußgänger, und die Autos müssen dich hinüberlassen.",
   },
   {
