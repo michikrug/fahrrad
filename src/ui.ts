@@ -417,10 +417,11 @@ export function createUI(root: HTMLElement) {
         el("h2", "", s, o.title);
         // Stars on a gentle arch, the middle ones highest; earned ones gold, the rest outlined.
         const row = el("div", "done-stars", s);
+        row.style.setProperty("--n", String(o.n));
         for (let k = 0; k < o.n; k++) {
           const star = el("span", k < o.stars ? "on" : "", row, k < o.stars ? "★" : "☆");
           const d = Math.abs(k - (o.n - 1) / 2) / Math.max(1, (o.n - 1) / 2); // 0 in the middle, 1 at the ends
-          star.style.transform = `translateY(${d * d * 22}px)`;
+          star.style.transform = `translateY(${d * d * 0.4}em)`; // em: the arch shrinks with the stars
           star.style.animationDelay = `${k * 0.08}s`;
         }
         el("div", "done-count", s, `${o.stars} von ${o.n} Sternen`);

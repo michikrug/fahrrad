@@ -230,7 +230,9 @@ button:not(:disabled), a[href], .set-row, .switch { cursor: pointer; }
 .modal.full .sheet > :last-child { margin-bottom: auto; }
 .done-kicker { font: 900 15px var(--font); letter-spacing: 2px; text-transform: uppercase; color: #ffb35c; }
 .modal.full h2 { font: 900 clamp(28px, 8vw, 38px) var(--font); margin: 6px 0 22px; }
-.done-stars { display: flex; justify-content: center; gap: 4px; margin-bottom: 18px; font-size: clamp(40px, 12vw, 58px); }
+/* One star per task: big for a short level, smaller when there are many (the exam has 11), so the row always fits. */
+.done-stars { display: flex; justify-content: center; gap: 4px; margin-bottom: 18px;
+  font-size: min(clamp(40px, 12vw, 58px), calc((100vw - 64px) / var(--n, 5) - 4px)); }
 .done-stars span { color: #ffffff55; animation: grow .45s ease-out both; }
 .done-stars span.on { color: var(--gold); text-shadow: 0 3px 0 #c98f00; }
 @keyframes grow { from { transform: scale(.3); opacity: 0; } }
