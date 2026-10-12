@@ -265,8 +265,10 @@ export function buildActor(p: Participant, layout: Layout): Actor {
   const onFoot = p.kind === "pedestrian" || p.crossing !== undefined;
   const { path, clear, enter } =
     onFoot
-      ? // A pushed bike stays on the asphalt: on the sidewalk (0.15 m up) its wheels would sink into the curb. Half its length back, so the rear wheel stays off it too.
-        crossPath(layout, p.arm, p.crossing ?? p.side ?? 1, p.kind === "pedestrian" ? undefined : ROAD_HALF - 0.4 - l / 2)
+      ? // A bike waits on the sidewalk at the curb, facing the crossing, far enough back that its front wheel is still on it.
+        p.kind === "pedestrian"
+          ? crossPath(layout, p.arm, p.side ?? 1)
+          : crossPath(layout, p.arm, p.crossing!, ROAD_HALF + l / 2 + 0.3, true)
       : lanePath(
           layout, p.arm, p.move ?? "straight", isBike ? ROAD_HALF - 0.7 : ROAD_HALF / 2, l, p.inRing, p.back,
           // § 9 Abs. 1 StVO: left-turners "bis zur Mitte einordnen" — bikes wait just right of the centre line.

@@ -110,16 +110,23 @@ export function lanePath(
 }
 
 /** Pedestrian walking across an arm on its crossing (or just past the junction if there is none). */
-export function crossPath(layout: Layout, arm: Arm, side: 1 | -1, reach = ROAD_HALF + 1.9): Lane {
+export function crossPath(layout: Layout, arm: Arm, side: 1 | -1, reach = ROAD_HALF + 1.9, raised = false): Lane {
   const [a, b] = crossingBand(layout);
   // Walkers from opposite sides keep to their right half of the crossing, so they pass instead of colliding.
   const s = (hasCrossing(layout.arms[arm]) ? (a + b) / 2 : edgeDist(layout) + 1.5) + side * 0.6;
   // `reach`: how far from the road's centre the walk starts. Default mid-sidewalk, clear of the sign posts at the curb.
-  const across = rightOf(DIR[arm]).multiplyScalar(reach);
+  const across = rightOf(DIR[arm]).multiplyScalar(1);
   const at = DIR[arm].clone().multiplyScalar(s);
-  const start = at.clone().addScaledVector(across, side);
-  const end = at.clone().addScaledVector(across, -side);
-  const path = new THREE.LineCurve3(start, end);
+  const point = (lat: number, y = 0) => at.clone().addScaledVector(across, lat * side).setY(y);
+  if (!raised) {
+    const path = new THREE.LineCurve3(point(reach), point(-reach));
+    return { path, clear: path.getLength() };
+  }
+  // A bike (with its rider) stands on the sidewalk, which is CURB high, and steps down to the road and up again.
+  const lat = [reach, ROAD_HALF + 0.15, ROAD_HALF - 0.1, -(ROAD_HALF - 0.1), -(ROAD_HALF + 0.15), -reach];
+  const y = [CURB, CURB, 0.02, 0.02, CURB, CURB];
+  const path = new THREE.CurvePath<THREE.Vector3>();
+  for (let k = 0; k < lat.length - 1; k++) path.add(new THREE.LineCurve3(point(lat[k], y[k]), point(lat[k + 1], y[k + 1])));
   return { path, clear: path.getLength() };
 }
 
