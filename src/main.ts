@@ -211,12 +211,15 @@ function askChoice() {
 /** Correct choice: act it out (ride on, cross, wait for green), then show the result. */
 function playAnswer({ groups, hold, stay }: NonNullable<Scenario["play"]>) {
   if (stay) {
-    // Waiting is the answer: the light goes on to red, the cross street gets green, nobody drives.
+    // Waiting is the answer: ride up to the stop line (`back` metres in) and stay there while the light goes
+    // to red and the cross street gets green. The hold never ends, so the bike does not drive on.
     const player = actors.find((a) => a.p.kind === "player")!;
-    const at = resets, arm = player.p.arm;
-    player.route.visible = false; // the arrow says "ride on", waiting is the answer
-    setTimeout(() => at === resets && giveGreen(ARMS[(ARMS.indexOf(arm) + 1) % 4]), 1400);
-    setTimeout(() => at === resets && finish(true), 3400);
+    const { runs } = schedule([[player]]);
+    runs[0].hold = { at: player.p.back ?? 0, secs: Infinity };
+    sim = { runs, t: 0, done: null };
+    const at = resets, arrive = (player.p.back ?? 0) / player.speed;
+    setTimeout(() => at === resets && giveGreen(ARMS[(ARMS.indexOf(player.p.arm) + 1) % 4]), (arrive + 0.8) * 1000);
+    setTimeout(() => at === resets && finish(true), (arrive + 2.8) * 1000);
     return;
   }
   const byId = new Map(actors.map((a) => [a.p.id, a]));
