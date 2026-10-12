@@ -162,6 +162,22 @@ const L2: Scenario[] = [
     },
     explain: "Wenn du dich unsicher fühlst, wählst du immer den sicheren Weg: indirekt abbiegen. In ruhigen Straßen darfst du direkt abbiegen, aber nur, wenn du dir sicher bist.",
   },
+  {
+    id: "left-direct", rule: "links-abbiegen", title: "Links abbiegen: ruhig und sicher", view: "ego",
+    layout: cross(),
+    participants: [you("left")],
+    choice: {
+      question: "Die Straße ist ruhig, und du fühlst dich sicher. Wie biegst du links ab?",
+      options: [
+        "Direkt: nach hinten schauen, linken Arm raus, zur Straßenmitte fahren und abbiegen",
+        "Direkt, aber ohne Zeichen – es kommt ja keiner",
+        "Ich darf nie direkt links abbiegen",
+      ],
+      correct: 0,
+    },
+    play: { groups: [["you"]] },
+    explain: "In ruhigen Straßen darfst du direkt links abbiegen, wenn du dich sicher fühlst. Dabei schaust du nach hinten, gibst ein Zeichen und ordnest dich zur Straßenmitte ein. Auf großen Kreuzungen oder wenn du unsicher bist, biegst du lieber indirekt ab.",
+  },
 ];
 
 const L3: Scenario[] = [
@@ -206,7 +222,7 @@ const L3: Scenario[] = [
     participants: [you()],
     choice: {
       question: "Vor dir ist ein Stoppschild. Es kommt gerade niemand. Was machst du?",
-      options: ["An der Linie ganz anhalten, dann fahren", "Langsam weiterrollen, es kommt ja keiner"],
+      options: ["An der Linie ganz anhalten, dann fahren", "Langsam weiterrollen, es kommt ja keiner", "Klingeln und durchfahren"],
       correct: 0,
     },
     play: { groups: [["you"]], hold: 1.6 },
@@ -343,7 +359,7 @@ const L6: Scenario[] = [
     participants: [you()],
     choice: {
       question: "Du willst geradeaus in die Straße vor dir fahren. Darfst du das?",
-      options: ["Ja, Radfahrer dürfen hier hineinfahren.", "Nein, hier darf niemand hinein."],
+      options: ["Ja, Radfahrer dürfen hier hineinfahren.", "Nein, hier darf niemand hinein.", "Nur wenn ich absteige und schiebe."],
       correct: 0,
     },
     play: { groups: [["you"]] },
@@ -355,7 +371,7 @@ const L6: Scenario[] = [
     participants: [you()],
     choice: {
       question: "Du willst geradeaus in die Straße vor dir fahren. Darfst du das?",
-      options: ["Ja, mit dem Rad darf ich überall hinein.", "Nein, hier darf niemand hinein."],
+      options: ["Ja, mit dem Rad darf ich überall hinein.", "Nein, hier darf niemand hinein.", "Ja, wenn gerade kein Auto kommt."],
       correct: 1,
     },
     explain: "Das rote Schild mit dem weißen Balken heißt: Verbot der Einfahrt. Es steht kein Zusatzschild darunter – also gilt es auch für dich.",
@@ -366,7 +382,7 @@ const L6: Scenario[] = [
     participants: [you("right")],
     choice: {
       question: "Du willst rechts in die Straße mit dem blauen Pfeil-Schild abbiegen. Darfst du das?",
-      options: ["Ja, ich fahre in Pfeilrichtung hinein.", "Nein, in eine Einbahnstraße darf ich nie."],
+      options: ["Ja, ich fahre in Pfeilrichtung hinein.", "Nein, in eine Einbahnstraße darf ich nie.", "Ja, aber nur gegen die Pfeilrichtung."],
       correct: 0,
     },
     play: { groups: [["you"]] },
@@ -409,7 +425,7 @@ const L7: Scenario[] = [
     participants: [you("left")],
     choice: {
       question: "Du folgst der Vorfahrtstraße nach links. Musst du ein Zeichen geben?",
-      options: ["Ja, ich strecke den linken Arm aus.", "Nein, ich habe ja Vorfahrt."],
+      options: ["Ja, ich strecke den linken Arm aus.", "Nein, ich habe ja Vorfahrt.", "Nur wenn ein Auto hinter mir fährt."],
       correct: 0,
     },
     play: { groups: [["you"]] }, // no hold: the arm is hidden in the bike view, a pause would have no visible reason
@@ -460,6 +476,17 @@ const L8: Scenario[] = [
 
 // Final test: no route arrows — kids read the situation, blinkers and signs themselves.
 const L10: Scenario[] = [
+  {
+    id: "walk-age", rule: "gehweg", title: "Gehweg oder Straße?", view: "ego",
+    layout: { arms: { N: {}, S: {} } },
+    participants: [you()],
+    choice: {
+      question: "Du bist 9 Jahre alt. Wo darfst du mit dem Rad fahren?",
+      options: ["Auf dem Gehweg oder auf der Straße", "Nur auf dem Gehweg", "Nur auf der Straße"],
+      correct: 0,
+    },
+    explain: "Bis 8 Jahre musst du auf dem Gehweg fahren, bis 10 Jahre darfst du wählen. Auf dem Gehweg nimmst du besondere Rücksicht auf Fußgänger. Bevor du von dort eine Straße überquerst, steigst du ab.",
+  },
   {
     id: "drive-1", rule: "einfahrt", title: "Auto aus der Einfahrt",
     layout: driveway(),
@@ -558,10 +585,10 @@ const L9: Scenario[] = [
   },
   {
     id: "exam-stop", rule: "stopp", title: "Prüfung: Stoppschild", hideRoutes: true,
-    layout: cross({ N: { signs: ["206"] }, S: { signs: ["206"] }, E: { signs: ["301"] }, W: { signs: ["301"] } }),
-    participants: [you(), car("car", "E", "straight", PURPLE)],
+    layout: cross({ N: { signs: ["301"] }, S: { signs: ["301"] }, E: { signs: ["206"] }, W: { signs: ["206"] } }),
+    participants: [you("straight", { arm: "E" }), car("car", "S", "straight", PURPLE)],
     answer: [["car"], ["you"]],
-    explain: "Du hast das Stoppschild. Du hältst an der Linie ganz an und lässt das lila Auto zuerst fahren, denn es hat Vorfahrt.",
+    explain: "Du hast das Stoppschild. Du hältst an der Linie ganz an und lässt das lila Auto zuerst fahren – auch wenn es von links kommt.",
   },
   {
     id: "exam-light", rule: "ampel", title: "Prüfung: Ampel", hideRoutes: true,
@@ -572,69 +599,69 @@ const L9: Scenario[] = [
   },
   {
     id: "exam-redyellow", rule: "rot-gelb", title: "Prüfung: Rot und Gelb", view: "ego",
-    layout: lights("redyellow", "red"),
-    participants: [you("straight", { back: 6 })],
+    layout: lights("red", "redyellow"),
+    participants: [you("straight", { arm: "W", back: 6 })],
     choice: {
-      question: "Deine Ampel zeigt Rot und Gelb zusammen. Was machst du?",
-      options: ["Losfahren, denn Gelb leuchtet schon", "Noch warten, bis Grün leuchtet", "Schnell vorbeifahren"],
+      question: "An deiner Ampel leuchten Rot und Gelb. Darfst du schon losfahren?",
+      options: ["Ja, Gelb heißt fahren", "Nein, erst wenn Grün leuchtet", "Ja, wenn niemand kommt"],
       correct: 1,
     },
     play: { groups: [["you"]], hold: 1.6 },
-    explain: "Rot und Gelb zusammen heißt: Gleich wird es Grün. Aber noch leuchtet Rot, und Rot heißt Halt. Du wartest, bis Grün leuchtet.",
+    explain: "Solange Rot leuchtet, heißt es Halt – auch wenn Gelb dazukommt. Du fährst erst los, wenn Grün leuchtet.",
   },
   {
-    id: "exam-zebra", rule: "zebrastreifen", title: "Prüfung: Zebrastreifen", hideRoutes: true,
-    layout: cross({ S: { zebra: true } }),
-    participants: [you(), walker("kid", "S", -1, TEAL)],
+    id: "exam-zebra", rule: "zebrastreifen", title: "Prüfung: Abbiegen am Zebrastreifen", hideRoutes: true,
+    layout: cross({ E: { zebra: true } }),
+    participants: [you("right"), walker("kid", "E", 1, TEAL)],
     answer: [["kid"], ["you"]],
-    explain: "Das Kind will über den Zebrastreifen. Du hältst an und lässt es hinübergehen.",
+    explain: "Du biegst rechts ab, und am Zebrastreifen in der neuen Straße will ein Junge hinüber. Du lässt ihn zuerst gehen.",
   },
   {
     id: "exam-push", rule: "zebra-schieben", title: "Prüfung: Rad am Zebrastreifen", view: "ego",
     layout: cross({ S: { zebra: true } }),
-    participants: [you("straight", { crossing: -1 })],
+    participants: [you("straight", { crossing: -1 }), car("car", "S", "straight", RED, { back: 8 })],
     choice: {
-      question: "Du willst mit dem Rad über den Zebrastreifen auf die andere Seite. Was ist richtig?",
-      options: ["Schnell hinüberfahren, die Autos bremsen schon", "Absteigen und das Rad schieben", "Klingeln und weiterfahren"],
-      correct: 1,
-    },
-    explain: "Am Zebrastreifen steigst du ab und schiebst dein Rad. Dann bist du ein Fußgänger, und die Autos müssen dich hinüberlassen.",
-  },
-  {
-    id: "exam-oneway", rule: "einbahn", title: "Prüfung: Einbahnstraße", view: "ego",
-    layout: cross({ N: { oneway: true, exitSigns: ["267"] } }),
-    participants: [you()],
-    choice: {
-      question: "Du willst geradeaus in die Straße vor dir fahren. Darfst du das?",
-      options: ["Nein, hier darf niemand hinein.", "Ja, mit dem Rad darf ich überall hinein."],
+      question: "Du willst mit dem Rad über den Zebrastreifen, und ein Auto kommt. Wann muss es dich vorlassen?",
+      options: ["Wenn ich absteige und schiebe", "Immer, auch wenn ich fahre", "Nie, Autos sind schneller"],
       correct: 0,
     },
-    explain: "Das rote Schild mit dem weißen Balken heißt: Verbot der Einfahrt. Es steht kein Zusatzschild darunter – also gilt es auch für dich.",
+    explain: "Nur wer schiebt, ist ein Fußgänger. Dann muss das Auto dich über den Zebrastreifen lassen. Wenn du fährst, musst du warten.",
   },
   {
-    id: "exam-left", rule: "links-abbiegen", title: "Prüfung: Links abbiegen", view: "ego",
-    layout: cross(),
-    participants: [you("left"), car("car", "N", "straight", RED)],
+    id: "exam-oneway", rule: "einbahn", title: "Prüfung: Einfahrt verboten", // choice: the arrow shows which way is meant
+    layout: cross({ E: { oneway: true, exitSigns: ["267"] } }),
+    participants: [you("right")],
     choice: {
-      question: "Du willst links abbiegen. Die Kreuzung ist groß und viel befahren. Wie biegst du am sichersten ab?",
-      options: ["Direkt: schnell vor dem Gegenverkehr abbiegen", "Direkt: losfahren, ohne zu schauen", "Indirekt: absteigen und die Straße zu Fuß überqueren"],
-      correct: 2,
+      question: "Du willst rechts in diese Straße abbiegen. Darfst du hineinfahren?",
+      options: ["Nein, hier darf niemand hinein.", "Ja, beim Abbiegen gilt das Schild nicht.", "Ja, wenn ich vorher klingle."],
+      correct: 0,
     },
-    explain: "Auf großen Kreuzungen mit viel Verkehr ist indirektes Abbiegen am sichersten. Du steigst ab und gehst die Straße zu Fuß hinüber.",
+    explain: "Das rote Schild mit dem weißen Balken gilt auch, wenn du abbiegst. Ohne Zusatzschild darf niemand hinein – auch du nicht.",
+  },
+  {
+    id: "exam-left", rule: "links-abbiegen", title: "Prüfung: Links abbiegen", // choice: the arrow shows which way is meant
+    layout: cross(),
+    participants: [you("left", { arm: "E" }), car("car1", "W", "straight", RED), car("car2", "N", "straight", TEAL)],
+    choice: {
+      question: "Auf der großen Kreuzung ist viel los, und du willst links abbiegen. Was ist am sichersten?",
+      options: ["Absteigen und als Fußgänger hinübergehen", "In der Mitte der Kreuzung warten und schnell abbiegen", "Ganz rechts bleiben und von dort abbiegen"],
+      correct: 0,
+    },
+    explain: "Bei viel Verkehr ist indirektes Abbiegen am sichersten: Du steigst ab und gehst als Fußgänger hinüber.",
   },
   {
     id: "exam-drive", rule: "einfahrt", title: "Prüfung: Einfahrt", hideRoutes: true,
-    layout: driveway(),
-    participants: [you(), car("car", "E", "left", PURPLE)],
+    layout: { arms: { N: {}, S: {}, W: { driveway: true } } },
+    participants: [you("straight", { arm: "N" }), car("car", "W", "left", PURPLE)], // you ride south, the car crosses your lane
     answer: [["you"], ["car"]],
-    explain: "Das lila Auto kommt aus einer Einfahrt und muss dich zuerst fahren lassen.",
+    explain: "Das lila Auto kommt rechts aus einer Einfahrt. Wer aus einer Einfahrt fährt, lässt alle vor – auch wenn er von rechts kommt. Du fährst zuerst.",
   },
   {
     id: "exam-round", rule: "kreisverkehr", title: "Prüfung: Kreisverkehr", hideRoutes: true,
     layout: roundabout,
-    participants: [you("right"), car("car", "W", "straight", TEAL, { inRing: true })],
+    participants: [you("straight", { arm: "N" }), car("car", "E", "straight", TEAL, { inRing: true })],
     answer: [["car"], ["you"]],
-    explain: "Das Auto fährt schon im Kreisverkehr und hat Vorfahrt. Du wartest an der Einfahrt.",
+    explain: "Das türkise Auto fährt schon im Kreisverkehr und hat Vorfahrt. Du wartest an der Einfahrt, bis es vorbei ist.",
   },
 ];
 

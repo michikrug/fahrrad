@@ -181,7 +181,7 @@ export const rules: RuleCard[] = [
     id: "gehweg",
     icon: "🚸",
     title: "Gehweg oder Straße?",
-    text: "Bis du 8 Jahre alt bist, musst du mit dem Rad auf dem Gehweg fahren. Bis 10 Jahre darfst du es noch. Danach fährst du auf der Straße oder dem Radweg.",
+    text: "Bis du 8 Jahre alt bist, musst du mit dem Rad auf dem Gehweg fahren. Bis 10 Jahre darfst du es noch. Auf dem Gehweg nimmst du besondere Rücksicht auf Fußgänger. Bevor du von dort eine Straße überquerst, steigst du ab. Ab 10 fährst du auf der Straße oder dem Radweg.",
     source: "§ 2 Abs. 5 StVO",
     url: `${STVO}__2.html`,
   },
