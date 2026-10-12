@@ -11,6 +11,8 @@ const RED = 0xd63a3a, BLUE = 0x2f6fd6, GREEN = 0x2f9e5a, PURPLE = 0x8e44ad, TEAL
 // --- layout helpers -------------------------------------------------------------------------
 const cross = (arms: Partial<Record<Arm, ArmSpec>> = {}): Layout => ({ arms: { N: {}, E: {}, S: {}, W: {}, ...arms } });
 const tee = (arms: Partial<Record<Arm, ArmSpec>> = {}): Layout => ({ arms: { E: {}, S: {}, W: {}, ...arms } });
+/** Straight street (N–S) with a driveway on the east side; the west side has houses. */
+const driveway = (arms: Partial<Record<Arm, ArmSpec>> = {}): Layout => ({ arms: { N: {}, S: {}, E: { driveway: true }, ...arms } });
 /** Same sign(s) on the N/S road and on the E/W road. */
 const signed = (ns: SignId[], ew: SignId[]): Layout =>
   cross({ N: { signs: ns }, S: { signs: ns }, E: { signs: ew }, W: { signs: ew } });
@@ -455,6 +457,39 @@ const L8: Scenario[] = [
 ];
 
 // Final test: no route arrows — kids read the situation, blinkers and signs themselves.
+const L10: Scenario[] = [
+  {
+    id: "drive-1", rule: "einfahrt", title: "Auto aus der Einfahrt",
+    layout: driveway(),
+    participants: [you(), car("car", "E", "left", BLUE)],
+    answer: [["you"], ["car"]],
+    explain: "Das blaue Auto kommt aus einer Einfahrt. Wer aus einer Einfahrt fährt, lässt alle auf der Straße zuerst fahren – auch wenn er von rechts kommt. Du fährst zuerst.",
+  },
+  {
+    id: "drive-walk", rule: "einfahrt", title: "Einfahrt und Gehweg",
+    layout: driveway(),
+    participants: [you(), car("car", "E", "left", GREEN), walker("kid", "E", 1)],
+    answer: [["kid", "you"], ["car"]],
+    explain: "Wer aus der Einfahrt kommt, muss zuerst das Mädchen auf dem Gehweg vorbeilassen und dann dich auf der Straße. Das Mädchen und du dürft gleichzeitig.",
+  },
+  {
+    id: "drive-look", rule: "einfahrt", title: "Sieht er mich?", view: "ego",
+    layout: driveway(),
+    participants: [you("straight", { back: 6 }), car("car", "E", "right", RED)], // further back so the car is in the bike view
+    choice: {
+      question: "Rechts vor dir will ein Auto aus einer Einfahrt fahren. Was machst du?",
+      options: [
+        "Weiterfahren, aber bremsbereit sein und schauen, ob der Fahrer mich sieht",
+        "Anhalten, denn das Auto kommt von rechts",
+        "Schnell vorbeifahren, ohne hinzuschauen",
+      ],
+      correct: 0,
+    },
+    play: { groups: [["you"], ["car"]] },
+    explain: "Du darfst zuerst fahren, denn das Auto kommt aus einer Einfahrt. Rechts vor links gilt hier nicht. Trotzdem bist du bremsbereit und schaust, ob der Fahrer dich gesehen hat.",
+  },
+];
+
 const L9: Scenario[] = [
   // One task per topic, no route arrows. Mixes "tap in order" and choice tasks, like the levels before.
   {
@@ -538,6 +573,13 @@ const L9: Scenario[] = [
     explain: "Auf großen Kreuzungen mit viel Verkehr ist indirektes Abbiegen am sichersten. Du steigst ab und gehst die Straße zu Fuß hinüber.",
   },
   {
+    id: "exam-drive", rule: "einfahrt", title: "Prüfung: Einfahrt", hideRoutes: true,
+    layout: driveway(),
+    participants: [you(), car("car", "E", "left", PURPLE)],
+    answer: [["you"], ["car"]],
+    explain: "Das lila Auto kommt aus einer Einfahrt und muss dich zuerst fahren lassen.",
+  },
+  {
     id: "exam-round", rule: "kreisverkehr", title: "Prüfung: Kreisverkehr", hideRoutes: true,
     layout: roundabout,
     participants: [you("right"), car("car", "W", "straight", TEAL, { inRing: true })],
@@ -555,6 +597,7 @@ export const levels: Level[] = [
   { id: "oneway", title: "Einbahnstraße", icon: "⛔", scenarios: L6 },
   { id: "bend", title: "Abknickende Vorfahrt", icon: "↰", scenarios: L7 },
   { id: "round", title: "Kreisverkehr", icon: "🔄", scenarios: L8 },
+  { id: "special", title: "Besondere Orte", icon: "🏠", scenarios: L10 },
   { id: "exam", title: "Abschlussprüfung", icon: "🏆", scenarios: L9 },
 ];
 

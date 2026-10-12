@@ -9,6 +9,10 @@ const ARM_LEN = 45;
 // Roundabout: island radius and outer ring radius.
 const RING_IN = 5;
 export const RING_OUT = 11.5;
+// Driveway (ArmSpec.driveway): half its width, and where it ends at the garage, measured from the road's centre.
+export const DRIVE_HALF = 1.6;
+export const DRIVE_END = 12.5;
+
 // Roundabout entries have a rounded curb corner, like real ones; lanes follow it at their usual distance.
 export const ENTRY_R = 3;
 // Where the rounded corner leaves the straight road edge, measured along the arm.
@@ -53,7 +57,9 @@ export const edgeDist = (layout: Layout) => (layout.roundabout ? RING_OUT : ROAD
 export const crossingBand = (layout: Layout) => [edgeDist(layout) + 1, edgeDist(layout) + 4] as const;
 /** Where the stop/wait line is on an arm — behind the crossing if there is one. */
 export const stopLine = (layout: Layout, arm: Arm) =>
-  hasCrossing(layout.arms[arm]) ? crossingBand(layout)[1] + 0.6 : edgeDist(layout) + 0.4;
+  // A car on a driveway waits on the drive, before the sidewalk: pedestrians there go first too.
+  layout.arms[arm]?.driveway ? ROAD_HALF + WALK + 0.3
+  : hasCrossing(layout.arms[arm]) ? crossingBand(layout)[1] + 0.6 : edgeDist(layout) + 0.4;
 
 export interface Lane {
   path: THREE.Curve<THREE.Vector3>;
@@ -133,6 +139,7 @@ export function crossPath(layout: Layout, arm: Arm, side: 1 | -1, reach = ROAD_H
 const mat = {
   asphalt: new THREE.MeshLambertMaterial({ color: 0x4a4d52 }),
   walk: new THREE.MeshLambertMaterial({ color: 0xc9c3b8 }),
+  drive: new THREE.MeshLambertMaterial({ color: 0x9c958c }),
   white: new THREE.MeshLambertMaterial({ color: 0xffffff }),
   island: new THREE.MeshLambertMaterial({ color: 0x6fb85a }),
 };
@@ -219,8 +226,21 @@ export function buildRoads(layout: Layout): THREE.Group {
     g.add(slab(-edge, edge, -edge, edge, 0.02, mat.asphalt));
   }
 
+  // A road with no cross street (driveways only on the sides): the centre line runs straight through.
+  const straight = !!layout.arms.N && !!layout.arms.S && (["E", "W"] as const).every((a) => !layout.arms[a] || layout.arms[a]!.driveway);
+
   for (const arm of ARMS) {
     const spec = layout.arms[arm];
+    if (spec?.driveway) {
+      // Sidewalk across the mouth like a missing arm, but with a lowered curb where the drive meets it.
+      // E/W mouths stop at the road edge: the N/S sidewalks own the corner squares (see below).
+      const w = isNS(arm) ? ROAD_HALF + WALK : ROAD_HALF;
+      g.add(slab(...armRect(arm, ROAD_HALF, ROAD_HALF + WALK, -w, -DRIVE_HALF), CURB, mat.walk));
+      g.add(slab(...armRect(arm, ROAD_HALF, ROAD_HALF + WALK, DRIVE_HALF, w), CURB, mat.walk));
+      g.add(slab(...armRect(arm, ROAD_HALF, ROAD_HALF + WALK, -DRIVE_HALF, DRIVE_HALF), 0.04, mat.walk));
+      g.add(slab(...armRect(arm, ROAD_HALF + WALK, DRIVE_END, -DRIVE_HALF, DRIVE_HALF), 0.03, mat.drive));
+      continue;
+    }
     if (!spec) {
       // Missing arm (T-junction): sidewalk runs straight across its mouth.
       // N/S strips own the corner squares, so only N/S mouths need the full width.
@@ -239,7 +259,7 @@ export function buildRoads(layout: Layout): THREE.Group {
     const line = (a: number, b: number, l0: number, l1: number) => g.add(slab(...armRect(arm, a, b, l0, l1), 0.01, mat.white, 0.02));
     const stop = stopLine(layout, arm);
     // Dashed centre line, starting behind the stop line like real markings.
-    if (!spec.oneway) for (let s = stop + 2; s < ARM_LEN; s += 6) line(s, s + 3, -0.06, 0.06);
+    if (!spec.oneway) for (let s = straight ? 0.5 : stop + 2; s < ARM_LEN; s += 6) line(s, s + 3, -0.06, 0.06);
 
     // Stop line across the arriving lane (left half of the road seen from outside = right lane of arriving traffic):
     // solid "Haltlinie" (Z. 294) at stop signs and lights, dashed "Wartelinie" (Z. 341) at give-way.

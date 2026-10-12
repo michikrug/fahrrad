@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { Layout } from "../types";
-import { ARMS, DIR, RING_OUT, ROAD_HALF, WALK, rightOf } from "./roads";
+import { ARMS, DIR, DRIVE_END, DRIVE_HALF, RING_OUT, ROAD_HALF, WALK, rightOf } from "./roads";
 
 // Houses and trees along the roads. Seeded so every scenario looks the same each time.
 const HOUSE_COLORS = [0xf4e1c1, 0xf2c6b4, 0xcfe3f2, 0xe6efc9, 0xf6d8e7, 0xfff1b5];
@@ -46,6 +46,20 @@ function tree(r: () => number) {
   return g;
 }
 
+/** Garage at the end of a driveway, its door facing the road. Model space: door towards -z. */
+function garage() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(geo.house, houseMats[1]);
+  body.scale.set(3.6, 2.6, 5);
+  body.position.y = 1.3;
+  const door = new THREE.Mesh(geo.house, new THREE.MeshLambertMaterial({ color: 0x8a8f96 }));
+  door.scale.set(2.8, 2.1, 0.1);
+  door.position.set(0, 1.05, -2.5);
+  for (const m of [body, door]) (m.castShadow = true), (m.receiveShadow = true);
+  g.add(body, door);
+  return g;
+}
+
 /** Ground footprint (x/z extent, height flattened) of a house or tree, roof and crown included. */
 function footprint(o: THREE.Object3D) {
   const b = new THREE.Box3().setFromObject(o);
@@ -62,8 +76,19 @@ export function buildDecor(layout: Layout): THREE.Group {
   const placed: THREE.Box3[] = [];
   for (const arm of ARMS) {
     const across = rightOf(DIR[arm]);
-    // Without a road on this arm the houses stand right where it would be.
-    const lats = layout.arms[arm] ? [1, -1].map((s) => s * (ROAD_HALF + WALK + 6)) : [0];
+    const spec = layout.arms[arm];
+    if (spec?.driveway) {
+      // The garage first, so the houses beside the drive make way for it.
+      const gar = garage();
+      gar.position.copy(DIR[arm]).multiplyScalar(DRIVE_END + 2.5);
+      gar.lookAt(gar.position.clone().sub(DIR[arm])); // door (-z) towards the road
+      gar.rotateY(Math.PI);
+      placed.push(footprint(gar).expandByScalar(0.5));
+      g.add(gar);
+    }
+    // Without a road on this arm the houses stand right where it would be; a driveway gets them on both sides.
+    const lats = spec?.driveway ? [1, -1].map((s) => s * (DRIVE_HALF + 5))
+      : spec ? [1, -1].map((s) => s * (ROAD_HALF + WALK + 6)) : [0];
     for (const lat of lats) {
       for (let s = start; s < 42; s += 8 + r() * 3) {
         const item = r() < 0.55 ? house(r) : tree(r);

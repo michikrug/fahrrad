@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { scenarios } from "../src/content/scenarios";
-import { ARMS, DIR, ENTRY_R, RING_OUT, ROAD_HALF, lanePath, rightOf } from "../src/scene/roads";
+import { ARMS, DIR, DRIVE_END, DRIVE_HALF, ENTRY_R, RING_OUT, ROAD_HALF, lanePath, rightOf } from "../src/scene/roads";
 import type { Move } from "../src/types";
 
 // Asphalt of a roundabout: the ring disc, the straight arms, and the rounded pockets at each entry corner.
@@ -27,4 +27,15 @@ test("roundabout lanes keep clear of the curb", () => {
         for (const inRing of [false, true])
           for (const p of lanePath(layout, from, move, offset, 2, inRing).path.getSpacedPoints(400))
             expect(onRoad(p.x, p.z, half), `${from} ${move} offset ${offset} inRing ${inRing} at ${p.x.toFixed(2)},${p.z.toFixed(2)}`).toBe(true);
+});
+
+test("a car coming out of a driveway stays on the drive and the road", () => {
+  const layout = scenarios.find((s) => s.layout.arms.E?.driveway)!.layout;
+  const half = 0.9; // half a car's width
+  // Road runs N–S (|x| ≤ ROAD_HALF); the drive goes east from the road edge, DRIVE_HALF either side of z = 0.
+  const onRoad = (x: number, z: number) =>
+    Math.abs(x) <= ROAD_HALF - half || (x >= ROAD_HALF - half && x <= DRIVE_END && Math.abs(z) <= DRIVE_HALF - half);
+  for (const move of ["left", "right"] as Move[])
+    for (const p of lanePath(layout, "E", move, ROAD_HALF / 2, 4.2, false, 0, 0).path.getSpacedPoints(400))
+      expect(onRoad(p.x, p.z), `${move} at ${p.x.toFixed(2)},${p.z.toFixed(2)}`).toBe(true);
 });

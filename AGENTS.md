@@ -46,7 +46,7 @@ Open one task directly with `/?s=<scenario id>`. In dev, `window.world`, `window
    - **`choice`**: 2–3 answer cards. `correct` indexes `options` as written. Cards are shuffled at display time, so the order in the data does not matter.
      A choice task can act out its correct answer with `play: { groups, hold? }` (who drives, one group after another; `hold` = seconds the player waits at the stop line first). `waitAtLine` is for "wait" answers: the player rides to the stop line and stays while the lights change. Wrong answers are never acted out. Without `play` the result just appears.
 3. `rule` must point to an existing rule card. Write `explain` in kid-friendly German. If it names a colour ("das rote Auto"), a participant of that colour must exist (enforced by a test).
-4. Prefer existing layout helpers in `scenarios.ts` (`cross()`, `roundabout`, `bend()`, …) over new geometry.
+4. Prefer existing layout helpers in `scenarios.ts` (`cross()`, `roundabout`, `bend()`, `driveway()`, …) over new geometry. A straight street is a layout with only N and S as roads; `ArmSpec.driveway` turns a side arm into a drive with a garage.
 5. Run `npm run check`. `tests/content.test.ts` validates every scenario.
 
 There is **no traffic-rule solver**: the right answer is written by hand, like a teacher would. Keep it that way unless the task count grows past ~100.

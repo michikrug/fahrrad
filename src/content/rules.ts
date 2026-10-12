@@ -146,6 +146,14 @@ export const rules: RuleCard[] = [
     url: `${STVO}__9.html`,
   },
   {
+    id: "einfahrt",
+    icon: "🏠",
+    title: "Auto aus der Einfahrt",
+    text: "Wer aus einer Einfahrt oder von einem Grundstück auf die Straße fährt, darf niemanden in Gefahr bringen. Er lässt alle vor: Fußgänger auf dem Gehweg und Fahrzeuge auf der Straße, auch wenn er von rechts kommt. Du darfst zuerst fahren, aber schau, ob der Fahrer dich gesehen hat!",
+    source: "§ 10 StVO",
+    url: `${STVO}__10.html`,
+  },
+  {
     id: "gehweg",
     icon: "🚸",
     title: "Gehweg oder Straße?",

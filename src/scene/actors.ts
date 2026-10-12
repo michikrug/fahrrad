@@ -272,7 +272,8 @@ export function buildActor(p: Participant, layout: Layout): Actor {
       : lanePath(
           layout, p.arm, p.move ?? "straight", isBike ? ROAD_HALF - 0.7 : ROAD_HALF / 2, l, p.inRing, p.back,
           // § 9 Abs. 1 StVO: left-turners "bis zur Mitte einordnen" — bikes wait just right of the centre line.
-          isBike && p.move === "left" && !layout.roundabout ? 0.9 : undefined,
+          layout.arms[p.arm]?.driveway ? 0 // out of the middle of the drive
+          : isBike && p.move === "left" && !layout.roundabout ? 0.9 : undefined,
         );
   const color = colorOf(p);
   // Start just ahead of the vehicle, end a few metres after the junction. Each arrow a hair higher

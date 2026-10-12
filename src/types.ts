@@ -35,6 +35,8 @@ export interface ArmSpec {
   zebra?: boolean;
   light?: { car: Phase; ped?: "red" | "green"; bike?: Phase; arrow?: "720" | "721" };
   oneway?: boolean; // no centre line
+  /** Not a road: a private driveway (Grundstückseinfahrt) up to a garage. Whoever comes out lets everyone go first (§ 10). */
+  driveway?: true;
 }
 
 export interface Layout {
