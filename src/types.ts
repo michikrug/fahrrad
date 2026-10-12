@@ -80,6 +80,11 @@ export interface Scenario {
   choice?: Choice;
   /** Start in the bike's own view instead of from above. */
   view?: "ego";
+  /**
+   * Choice tasks: what happens after a correct answer, before the result. `groups` drive one after another
+   * (ids of participants); `hold` = seconds the player stands still at the stop line first (`back` metres in).
+   */
+  play?: { groups: Groups; hold?: number };
   /** Higher levels: no route arrows, kids must read blinkers and hand signals. */
   hideRoutes?: boolean;
   /** Shown after answering — kid-friendly German. */

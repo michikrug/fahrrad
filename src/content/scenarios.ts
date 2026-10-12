@@ -204,6 +204,7 @@ const L3: Scenario[] = [
       options: ["An der Linie ganz anhalten, dann fahren", "Langsam weiterrollen, es kommt ja keiner"],
       correct: 0,
     },
+    play: { groups: [["you"]], hold: 1.6 },
     explain: "Am Stoppschild hältst du immer ganz an – auch wenn niemand kommt. Erst schauen, dann fahren.",
   },
 ];
@@ -232,6 +233,7 @@ const L4: Scenario[] = [
       options: ["Vor der Kreuzung warten", "Schnell noch losfahren", "Gelb ist wie Grün, also fahren"],
       correct: 0,
     },
+    play: { groups: [["you"]], hold: 1.6 },
     explain: "Gelb heißt: Vor der Kreuzung auf das nächste Licht warten. Gleich kommt Rot – also nicht mehr losfahren.",
   },
   {
@@ -250,6 +252,7 @@ const L4: Scenario[] = [
       options: ["Erst anhalten, dann vorsichtig rechts abbiegen", "Ohne anzuhalten rechts abbiegen", "Bei Rot darf ich nie abbiegen"],
       correct: 0,
     },
+    play: { groups: [["you"]], hold: 1.6 },
     explain: "Der grüne Pfeil mit Fahrrad gilt nur für Radfahrer. Du darfst bei Rot rechts abbiegen – aber erst, nachdem du angehalten und geschaut hast.",
   },
   {
@@ -261,6 +264,7 @@ const L4: Scenario[] = [
       options: ["Noch warten, bis Grün leuchtet", "Losfahren, denn Gelb leuchtet schon", "Klingeln, damit die Ampel umschaltet"],
       correct: 0,
     },
+    play: { groups: [["you"]], hold: 1.6 },
     explain: "Rot und Gelb zusammen heißt: Gleich wird es Grün. Aber noch leuchtet Rot, und Rot heißt Halt. Du wartest, bis Grün leuchtet.",
   },
 ];
@@ -296,6 +300,7 @@ const L5: Scenario[] = [
       options: ["Anhalten und ihn hinübergehen lassen", "Klingeln, damit er wartet", "Schnell vorbeifahren"],
       correct: 0,
     },
+    play: { groups: [["kid"], ["you"]] },
     explain: "Wer erkennbar über den Zebrastreifen gehen will, muss hinübergelassen werden. Du fährst langsam heran und hältst an.",
   },
   {
@@ -307,6 +312,7 @@ const L5: Scenario[] = [
       options: ["Absteigen und das Rad schieben", "Schnell hinüberfahren", "Klingeln und weiterfahren"],
       correct: 0,
     },
+    play: { groups: [["you"]] },
     explain: "Am Zebrastreifen steigst du ab und schiebst dein Rad. Dann bist du ein Fußgänger, und die Autos müssen dich hinüberlassen.",
   },
   {
@@ -322,6 +328,7 @@ const L5: Scenario[] = [
       ],
       correct: 0,
     },
+    play: { groups: [["you"]] },
     explain: "Wenn du fährst, müssen die Autos dich nicht vorlassen. Wenn du schiebst, bist du ein Fußgänger und hast Vorrang. Fahren ist nicht verboten, aber schieben ist sicherer.",
   },
 ];
@@ -336,6 +343,7 @@ const L6: Scenario[] = [
       options: ["Ja, Radfahrer dürfen hier hineinfahren.", "Nein, hier darf niemand hinein."],
       correct: 0,
     },
+    play: { groups: [["you"]] },
     explain: "Das rote Schild mit dem weißen Balken heißt: Hier darf niemand hineinfahren. Aber das kleine Schild darunter sagt: Radverkehr frei! Du darfst also fahren und achtest auf entgegenkommende Autos.",
   },
   {
@@ -358,6 +366,7 @@ const L6: Scenario[] = [
       options: ["Ja, ich fahre in Pfeilrichtung hinein.", "Nein, in eine Einbahnstraße darf ich nie."],
       correct: 0,
     },
+    play: { groups: [["you"]] },
     explain: "Das blaue Schild zeigt eine Einbahnstraße. In Pfeilrichtung darfst du hineinfahren.",
   },
   {
@@ -428,6 +437,7 @@ const L8: Scenario[] = [
       options: ["Nein, beim Hineinfahren nicht.", "Ja, den linken Arm.", "Ja, den rechten Arm."],
       correct: 0,
     },
+    play: { groups: [["you"]] },
     explain: "Beim Hineinfahren in den Kreisverkehr gibst du kein Zeichen. Erst beim Hinausfahren zeigst du mit dem rechten Arm.",
   },
   {
@@ -483,6 +493,7 @@ const L9: Scenario[] = [
       options: ["Losfahren, denn Gelb leuchtet schon", "Noch warten, bis Grün leuchtet", "Schnell vorbeifahren"],
       correct: 1,
     },
+    play: { groups: [["you"]], hold: 1.6 },
     explain: "Rot und Gelb zusammen heißt: Gleich wird es Grün. Aber noch leuchtet Rot, und Rot heißt Halt. Du wartest, bis Grün leuchtet.",
   },
   {
@@ -501,6 +512,7 @@ const L9: Scenario[] = [
       options: ["Schnell hinüberfahren, die Autos bremsen schon", "Absteigen und das Rad schieben", "Klingeln und weiterfahren"],
       correct: 1,
     },
+    play: { groups: [["you"]] },
     explain: "Am Zebrastreifen steigst du ab und schiebst dein Rad. Dann bist du ein Fußgänger, und die Autos müssen dich hinüberlassen.",
   },
   {

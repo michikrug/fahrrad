@@ -6,12 +6,12 @@ import { rules, signInfo } from "./content/rules";
 import { levels, scenarios } from "./content/scenarios";
 import { UNLOCK_SHARE, isUnlocked, levelStats, loadAutoRead, needsPractice, loadFree, loadProgress, loadSound, record, saveAutoRead, saveFree, saveProgress, saveSound } from "./progress";
 import { signCanvas } from "./scene/signs";
-import { clearTime, isNearMiss, listenForTaps, nearMissSchedule, schedule, type Run } from "./play";
+import { clearTime, isNearMiss, listenForTaps, nearMissSchedule, schedule, travelled, type Run } from "./play";
 import { buildActor, placeAt, updateSignal, type Actor } from "./scene/actors";
 import type { LightControl } from "./scene/lights";
 import { ARMS } from "./scene/roads";
 import { buildLevel, createWorld, disposeTree } from "./scene/world";
-import type { Arm, Layout, SignId } from "./types";
+import type { Arm, Layout, Scenario, SignId } from "./types";
 import { createUI } from "./ui";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -201,7 +201,27 @@ function askChoice() {
     const j = Math.floor(Math.random() * (i + 1));
     [order[i], order[j]] = [order[j], order[i]];
   }
-  ui.showChoice(order.map((i) => s.choice!.options[i]), (i) => finish(order[i] === s.choice!.correct));
+  ui.showChoice(order.map((i) => s.choice!.options[i]), (i) => {
+    const ok = order[i] === s.choice!.correct;
+    if (ok && s.play) return playAnswer(s.play);
+    finish(ok);
+  });
+}
+
+/** Correct choice: act it out (ride on, cross, wait for green), then show the result. */
+function playAnswer({ groups, hold }: NonNullable<Scenario["play"]>) {
+  const byId = new Map(actors.map((a) => [a.p.id, a]));
+  const { runs } = schedule(groups.map((g) => g.map((id) => byId.get(id)!)));
+  const player = runs.find((r) => r.a.p.kind === "player");
+  if (player && hold) {
+    const arrow = !!current().layout.arms[player.a.p.arm]?.light?.arrow;
+    const lit = lights.has(player.a.p.arm);
+    // Waits at the stop line (`back` metres in). A plain signal waits where the kid first stands, with the signal
+    // head in view: from the line it hangs above the picture. A green arrow stays red: turning on red is the point.
+    player.hold = { at: lit && !arrow ? 0 : player.a.p.back ?? 0, secs: hold };
+    if (arrow) player.released = true;
+  }
+  sim = { runs, t: 0, done: () => finish(true) };
 }
 
 function reset() {
@@ -286,9 +306,14 @@ function stepSim(dt: number) {
     if (!r.started && sim.t >= r.start) {
       r.started = true;
       r.a.route.visible = false;
+      if (!r.hold) switchLightsFor(r.a);
+    }
+    // Holding at a red light: green only once the wait is over.
+    if (r.hold && !r.released && sim.t >= r.start + r.hold.at / r.a.speed + r.hold.secs) {
+      r.released = true;
       switchLightsFor(r.a);
     }
-    placeAt(r.a, Math.max(0, sim.t - r.start) * r.a.speed);
+    placeAt(r.a, travelled(r, sim.t));
   }
   const [x, y] = sim.pair ?? [];
   if (x && y && sim.at && isNearMiss(x, y, sim.at)) {

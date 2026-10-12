@@ -38,6 +38,13 @@ for (const s of scenarios) {
       const match = s.participants.filter((p) => kinds.includes(p.kind) && COLOR_WORDS[colorOf(p)] === word);
       expect(match.length, `${word} ${noun}`).toBeGreaterThan(0);
     }
+    // The acted-out answer of a choice task only names people who are in the scene, each once.
+    if (s.play) {
+      expect(!!s.choice).toBe(true);
+      const played = s.play.groups.flat();
+      expect(new Set(played).size).toBe(played.length);
+      for (const id of played) expect(ids).toContain(id);
+    }
     // Every participant comes from an arm that exists.
     for (const p of s.participants) expect(s.layout.arms[p.arm]).toBeDefined();
   });

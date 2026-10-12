@@ -45,13 +45,25 @@ export interface Run {
   a: Actor;
   start: number; // seconds after "Los"
   started?: boolean;
+  /** Stands still for `secs` once it has driven `at` metres (stop line), then goes on. */
+  hold?: { at: number; secs: number };
+  released?: boolean;
+}
+
+/** Metres driven along the path at time `t`. */
+export function travelled(r: Run, t: number) {
+  const d = Math.max(0, t - r.start) * r.a.speed;
+  if (!r.hold) return d;
+  const tAt = r.start + r.hold.at / r.a.speed;
+  if (t < tAt) return d;
+  return t < tAt + r.hold.secs ? r.hold.at : r.hold.at + (t - tAt - r.hold.secs) * r.a.speed;
 }
 
 /** Distance after which an actor's rear has left the junction square. */
 const clearDist = (a: Actor) => a.clear + a.len / 2;
 
 /** Moment the last actor has left the junction. */
-export const clearTime = (runs: Run[]) => Math.max(...runs.map((r) => r.start + clearDist(r.a) / r.a.speed));
+export const clearTime = (runs: Run[]) => Math.max(...runs.map((r) => r.start + clearDist(r.a) / r.a.speed + (r.hold?.secs ?? 0)));
 
 /** Groups drive one after another; members of a group drive together. */
 export function schedule(groups: Actor[][], t0 = 0): { runs: Run[]; end: number } {
