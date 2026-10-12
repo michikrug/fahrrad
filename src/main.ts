@@ -330,7 +330,7 @@ function stepSim(dt: number) {
       r.released = true;
       switchLightsFor(r.a);
     }
-    placeAt(r.a, runOut(travelled(r, sim.t), r.a.clear));
+    placeAt(r.a, runOut(travelled(r, sim.t), r.a.clear, r.a.speed));
   }
   const [x, y] = sim.pair ?? [];
   if (x && y && sim.at && isNearMiss(x, y, sim.at)) {
