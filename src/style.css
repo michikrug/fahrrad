@@ -13,6 +13,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; font-family: var(--font)
 /* touch-action none: otherwise mobile Safari scrolls/zooms instead of rotating the camera */
 #app { position: fixed; inset: 0; touch-action: none; }
 canvas { display: block; }
+/* Hand cursor on everything clickable (only matters with a mouse); disabled buttons stay plain. */
+button:not(:disabled), a[href], .set-row, .switch { cursor: pointer; }
 /* z-index makes its own stacking context, so pin z-indices from CSS2DRenderer stay below the UI */
 .labels { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 .hidden { display: none !important; }
