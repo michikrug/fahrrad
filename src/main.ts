@@ -4,7 +4,7 @@ import { createCameraRig } from "./camera";
 import { firstMistake, isCorrect } from "./check";
 import { rules, signInfo } from "./content/rules";
 import { levels, scenarios } from "./content/scenarios";
-import { UNLOCK_SHARE, isUnlocked, levelStats, loadAutoRead, loadFree, loadProgress, loadSound, record, saveAutoRead, saveFree, saveProgress, saveSound } from "./progress";
+import { UNLOCK_SHARE, isUnlocked, levelStats, loadAutoRead, needsPractice, loadFree, loadProgress, loadSound, record, saveAutoRead, saveFree, saveProgress, saveSound } from "./progress";
 import { signCanvas } from "./scene/signs";
 import { clearTime, isNearMiss, listenForTaps, nearMissSchedule, schedule, type Run } from "./play";
 import { buildActor, placeAt, updateSignal, type Actor } from "./scene/actors";
@@ -77,7 +77,21 @@ const sheetData = () => ({
 });
 
 /** Continue where the kid left off: first unsolved scenario, else from the start. */
+/** "Nochmal üben": scenario indices still to practise, fixed when the round starts. Not saved: a reload is back to normal. */
+let practice: number[] | null = null;
+const toPractise = () => scenarios.flatMap((s, i) => (needsPractice(progress, s.id) ? [i] : []));
+function startPractice() {
+  practice = toPractise();
+  if (practice.length) go(practice[0]);
+}
+function practiceDone() {
+  const n = practice!.length;
+  const left = practice!.filter((i) => needsPractice(progress, scenarios[i].id)).length;
+  ui.showPracticeDone({ n, left }, { map: () => go(null), again: startPractice });
+}
+
 function startLevel(i: number) {
+  practice = null;
   const first = levels[i].scenarios.find((s) => !progress[s.id]?.solved) ?? levels[i].scenarios[0];
   go(scenarios.indexOf(first));
 }
@@ -103,6 +117,7 @@ function showMap() {
       cta: played
         ? { label: "Zurück zur Aufgabe", go: () => go(index, false) }
         : { label: `Los geht's: ${levels[Math.max(next, 0)].title}`, go: () => startLevel(Math.max(next, 0)) },
+      practice: { n: toPractise().length, start: startPractice },
       free,
       setFree(on) {
         free = on;
@@ -142,10 +157,8 @@ function load(i: number) {
   rig.setRider(actors.find((a) => a.p.kind === "player") ?? null);
   reset();
   const lvl = levels[levelOf(i)].scenarios;
-  ui.showScenario(s.title, s.choice?.question ?? "Wer darf zuerst?\nTippe alle der Reihe nach an.", {
-    i: lvl.indexOf(s),
-    n: lvl.length,
-  });
+  const pos = practice ? { i: practice.indexOf(i), n: practice.length, practice: true } : { i: lvl.indexOf(s), n: lvl.length };
+  ui.showScenario(s.title, s.choice?.question ?? "Wer darf zuerst?\nTippe alle der Reihe nach an.", pos);
   ui.showChips(s.choice ? [] : actors.map(chipFor), pick);
   if (s.choice) askChoice();
   // Frame everyone where they wait (lights/zebras push them further out), plus a little air —
@@ -360,12 +373,20 @@ function levelDone() {
 }
 
 ui.onNext(() => {
+  if (practice) {
+    const k = practice.indexOf(index);
+    return k + 1 < practice.length ? go(practice[k + 1]) : practiceDone();
+  }
   if (index + 1 >= scenarios.length || levelOf(index + 1) !== levelOf(index)) return levelDone();
   go(index + 1);
 });
 ui.onMenu(() => go(null));
 // Stay inside the level; the stepper's buttons are disabled at both ends.
 ui.onStep((d) => {
+  if (practice) {
+    const to = practice[practice.indexOf(index) + d];
+    return to === undefined ? undefined : go(to);
+  }
   if (levelOf(index + d) === levelOf(index)) go(index + d);
 });
 
@@ -405,6 +426,7 @@ function render(restart: boolean) {
     return;
   }
   played = true;
+  if (practice && !practice.includes(i)) practice = null; // browser back/forward or a link leads out of the round
   ui.hideMap();
   // Back/forward to the task you were on resumes it instead of starting over.
   if (restart || i !== index) load(i);

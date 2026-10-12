@@ -61,6 +61,9 @@ export const saveSound = (on: boolean) => saveFlag("fahrrad.sound.v1", on);
 export const loadAutoRead = () => loadFlag("fahrrad.read.v1", false);
 export const saveAutoRead = (on: boolean) => saveFlag("fahrrad.read.v1", on);
 
+/** Answered wrong at least once and no clean run since: what "Nochmal üben" asks again. */
+export const needsPractice = (p: Progress, id: string) => !!p[id] && !p[id].firstTry;
+
 export function levelStats(level: Level, p: Progress) {
   const n = level.scenarios.length;
   const solved = level.scenarios.filter((s) => p[s.id]?.solved).length;

@@ -227,7 +227,7 @@ export function createUI(root: HTMLElement) {
   let mapTab: "karte" | "spick" | "settings" = "karte";
   let autoRead = false;
 
-  function mapPane(pane: HTMLElement, levels: MapLevel[], pick: (i: number) => void) {
+  function mapPane(pane: HTMLElement, levels: MapLevel[], pick: (i: number) => void, practice: { n: number; start: () => void }) {
     const head = el("div", "map-head", pane);
     const row = el("div", "map-title", head);
     const t = el("div", "", row);
@@ -238,6 +238,14 @@ export function createUI(root: HTMLElement) {
     const track = el("div", "map-track", head);
     el("span", "map-fill", track).style.width = `${(solved / total) * 100}%`;
 
+    if (practice.n > 0) {
+      const b = el("button", "practice", pane);
+      el("span", "practice-icon", b, "🔁");
+      const info = el("span", "level-info", b);
+      el("strong", "", info, "Nochmal üben");
+      el("span", "level-sub", info, `${practice.n} ${practice.n === 1 ? "Aufgabe" : "Aufgaben"} mit Fehlern`);
+      b.addEventListener("click", practice.start);
+    }
     const list = el("div", "levels", pane);
     levels.forEach((l, i) => {
       const state = l.locked ? "locked" : l.next ? "next" : l.done ? "done" : "open";
@@ -337,6 +345,8 @@ export function createUI(root: HTMLElement) {
       autoRead: boolean;
       setAutoRead: (on: boolean) => void;
       resetProgress: () => void;
+      /** Tasks answered wrong so far; the card only shows when there are some. */
+      practice: { n: number; start: () => void };
     }) {
       stopSpeaking();
       map.replaceChildren();
@@ -353,7 +363,7 @@ export function createUI(root: HTMLElement) {
         pane.scrollTop = 0;
         cta.classList.toggle("hidden", t !== "karte");
         for (const b of tabs.children) b.classList.toggle("on", (b as HTMLElement).dataset.tab === t);
-        if (t === "karte") mapPane(pane, levels, o.pick);
+        if (t === "karte") mapPane(pane, levels, o.pick, o.practice);
         else if (t === "spick") sheetPane(pane, o.sheet(), () => show("karte"));
         else settingsPane(pane, o);
       };
@@ -428,6 +438,20 @@ export function createUI(root: HTMLElement) {
       }, { icon: "", text: "Zu den Aufgaben", then: go.map, primary: false }, "full");
     },
 
+    /** End of a practice round: `left` = tasks still not answered cleanly. */
+    showPracticeDone(o: { n: number; left: number }, go: { map: () => void; again: () => void }) {
+      openModal((s) => {
+        const ok = o.left === 0;
+        el("div", "done-kicker", s, "Nochmal üben");
+        el("h2", "", s, ok ? "Alles geübt!" : `Noch ${o.left} zum Üben`);
+        el("p", "", s, ok ? "Du hast alle Aufgaben mit Fehlern jetzt richtig gelöst. Super!" : "Probiere die übrigen noch einmal. Beim Üben lernst du am meisten.");
+        if (!ok) {
+          const b = el("button", "btn3d orange wide", s, "Nochmal üben");
+          b.addEventListener("click", () => ((afterClose = go.again), closeModal()));
+        }
+      }, { icon: "", text: "Zu den Aufgaben", then: go.map, primary: false }, "full");
+    },
+
     setView(mode: "bird" | "ego") {
       for (const [m, b] of Object.entries(viewBtns)) {
         b.classList.toggle("on", m === mode);
@@ -482,8 +506,8 @@ export function createUI(root: HTMLElement) {
       });
     },
     /** `pos` = place in the level, for the ‹ 2 von 5 › stepper. */
-    showScenario(t: string, taskText: string, pos: { i: number; n: number }) {
-      count.textContent = `Aufgabe ${pos.i + 1} von ${pos.n}`; // shown in capitals
+    showScenario(t: string, taskText: string, pos: { i: number; n: number; practice?: boolean }) {
+      count.textContent = `${pos.practice ? "Üben" : "Aufgabe"} ${pos.i + 1} von ${pos.n}`; // shown in capitals
       prev.disabled = pos.i === 0;
       fwd.disabled = pos.i === pos.n - 1;
       stopSpeaking();

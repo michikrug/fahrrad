@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { isUnlocked, levelStats, record, type Progress } from "../src/progress";
+import { isUnlocked, levelStats, needsPractice, record, type Progress } from "../src/progress";
 import type { Level, Scenario } from "../src/types";
 
 const sc = (id: string) => ({ id }) as Scenario;
@@ -24,4 +24,17 @@ test("stars only for first-try solves and never lost", () => {
   p = record(p, "a2", true, true);
   p = record(p, "a2", false, false); // replay with a mistake
   expect(p.a2).toEqual({ solved: true, firstTry: true });
+});
+
+test("practice list: wrong or retried tasks until one clean run", () => {
+  let p: Progress = {};
+  expect(needsPractice(p, "a1")).toBe(false); // never played
+  p = record(p, "a1", false, true); // wrong
+  expect(needsPractice(p, "a1")).toBe(true);
+  p = record(p, "a1", true, false); // right, but after a mistake: still practise
+  expect(needsPractice(p, "a1")).toBe(true);
+  p = record(p, "a1", true, true); // clean run
+  expect(needsPractice(p, "a1")).toBe(false);
+  p = record(p, "a1", false, false); // a later slip never takes the star back
+  expect(needsPractice(p, "a1")).toBe(false);
 });
