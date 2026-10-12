@@ -209,7 +209,16 @@ function askChoice() {
 }
 
 /** Correct choice: act it out (ride on, cross, wait for green), then show the result. */
-function playAnswer({ groups, hold }: NonNullable<Scenario["play"]>) {
+function playAnswer({ groups, hold, stay }: NonNullable<Scenario["play"]>) {
+  if (stay) {
+    // Waiting is the answer: the light goes on to red, the cross street gets green, nobody drives.
+    const player = actors.find((a) => a.p.kind === "player")!;
+    const at = resets, arm = player.p.arm;
+    player.route.visible = false; // the arrow says "ride on", waiting is the answer
+    setTimeout(() => at === resets && giveGreen(ARMS[(ARMS.indexOf(arm) + 1) % 4]), 1400);
+    setTimeout(() => at === resets && finish(true), 3400);
+    return;
+  }
   const byId = new Map(actors.map((a) => [a.p.id, a]));
   const { runs } = schedule(groups.map((g) => g.map((id) => byId.get(id)!)));
   const player = runs.find((r) => r.a.p.kind === "player");
@@ -291,11 +300,16 @@ function switchLightsFor(a: Actor) {
     return;
   }
   if (l.state.car === "green") return;
-  const axis = (arm: Arm) => ARMS.indexOf(arm) % 2; // N/S = 0, E/W = 1
-  for (const [arm, other] of lights) {
-    const same = axis(arm) === axis(a.p.arm);
-    other.car(same ? "green" : "red");
-    if (other.state.ped) other.ped(same ? "red" : "green");
+  giveGreen(a.p.arm);
+}
+
+/** Green for the road `arm` is on, red for the crossing one (and the other way round for pedestrians). */
+function giveGreen(arm: Arm) {
+  const axis = (a: Arm) => ARMS.indexOf(a) % 2; // N/S = 0, E/W = 1
+  for (const [other, l] of lights) {
+    const same = axis(other) === axis(arm);
+    l.car(same ? "green" : "red");
+    if (l.state.ped) l.ped(same ? "red" : "green");
   }
 }
 

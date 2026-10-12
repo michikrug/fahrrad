@@ -234,7 +234,7 @@ const L4: Scenario[] = [
       options: ["Vor der Kreuzung warten", "Schnell noch losfahren", "Gelb ist wie Grün, also fahren"],
       correct: 0,
     },
-    play: { groups: [["you"]], hold: 1.6 },
+    play: { groups: [], stay: true },
     explain: "Gelb heißt: Vor der Kreuzung auf das nächste Licht warten. Gleich kommt Rot – also nicht mehr losfahren.",
   },
   {
