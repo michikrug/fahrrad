@@ -81,6 +81,7 @@ function bus() {
   const g = new THREE.Group();
   g.add(box(2.5, 2.6, 11, lambert(0xf2c230), 0, 1.7, 0));
   g.add(box(2.55, 0.9, 10, glass, 0, 2.3, 0.2));
+  g.add(box(2.2, 1.3, 0.06, glass, 0, 2.05, 5.52)); // windscreen: the front (+z) must read as a front
   wheels(g, 0.5, 1.2, [-3.5, 3.5]);
   return g;
 }
