@@ -78,7 +78,7 @@ export const rules: RuleCard[] = [
     title: "Am Zebrastreifen schieben",
     text: "Fährst du mit dem Rad über den Zebrastreifen, müssen die Autos dich nicht vorlassen. Steig lieber ab und schiebe dein Rad: Dann bist du ein Fußgänger, und alle Fahrzeuge müssen dich hinüberlassen.",
     signs: ["350"],
-    source: "ADAC und Polizei NRW zu § 26 StVO",
+    source: "Auslegung von ADAC und Polizei NRW zu § 26 StVO",
     url: "https://www.adac.de/verkehr/recht/verkehrsvorschriften-deutschland/zebrastreifen/",
   },
   {
