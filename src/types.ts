@@ -83,9 +83,10 @@ export interface Scenario {
   /**
    * Choice tasks: what happens after a correct answer, before the result. `groups` drive one after another
    * (ids of participants); `hold` = seconds the player stands still at the stop line first (`back` metres in).
-   * `stay`: nobody drives; the light turns red after a moment and the player stays where they are (the answer is "wait").
+   * `waitAtLine`: the answer is "wait": only the player drives, up to the stop line, and stays there while this
+   * road's light turns red and the cross street's turns green. Nobody drives on.
    */
-  play?: { groups: Groups; hold?: number; stay?: true };
+  play?: { groups: Groups; hold?: number; waitAtLine?: true };
   /** Higher levels: no route arrows, kids must read blinkers and hand signals. */
   hideRoutes?: boolean;
   /** Shown after answering — kid-friendly German. */

@@ -44,7 +44,7 @@ Open one task directly with `/?s=<scenario id>`. In dev, `window.world`, `window
 2. Pick exactly one question type:
    - **`answer`**: tap the road users in order. It is a list of **groups** (`[["a","b"],["c"]]`): members of one group may be tapped in any order, e.g. two oncoming vehicles going straight.
    - **`choice`**: 2–3 answer cards. `correct` indexes `options` as written. Cards are shuffled at display time, so the order in the data does not matter.
-     A choice task can act out its correct answer with `play: { groups, hold? }` (who drives, one group after another; `hold` = seconds the player waits at the stop line first). Wrong answers are never acted out. Without `play` the result just appears.
+     A choice task can act out its correct answer with `play: { groups, hold? }` (who drives, one group after another; `hold` = seconds the player waits at the stop line first). `waitAtLine` is for "wait" answers: the player rides to the stop line and stays while the lights change. Wrong answers are never acted out. Without `play` the result just appears.
 3. `rule` must point to an existing rule card. Write `explain` in kid-friendly German. If it names a colour ("das rote Auto"), a participant of that colour must exist (enforced by a test).
 4. Prefer existing layout helpers in `scenarios.ts` (`cross()`, `roundabout`, `bend()`, …) over new geometry.
 5. Run `npm run check`. `tests/content.test.ts` validates every scenario.

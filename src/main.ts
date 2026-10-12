@@ -209,8 +209,8 @@ function askChoice() {
 }
 
 /** Correct choice: act it out (ride on, cross, wait for green), then show the result. */
-function playAnswer({ groups, hold, stay }: NonNullable<Scenario["play"]>) {
-  if (stay) {
+function playAnswer({ groups, hold, waitAtLine }: NonNullable<Scenario["play"]>) {
+  if (waitAtLine) {
     // Waiting is the answer: ride up to the stop line (`back` metres in) and stay there while the light goes
     // to red and the cross street gets green. The hold never ends, so the bike does not drive on.
     const player = actors.find((a) => a.p.kind === "player")!;
