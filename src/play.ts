@@ -52,11 +52,12 @@ export interface Run {
 
 /**
  * Brakes `d` to a stop shortly after the junction, so nobody drives on to the far end of the drawn road.
- * The run-out grows with the square of the speed, like a braking distance: a bike stops about 5 m before a
- * car, so two vehicles leaving by the same arm do not end up on top of each other.
+ * `clear`: where the vehicle's rear has left the junction (see `clearDist`), so a long bus is measured by its
+ * rear, not its middle. The run-out grows with the square of the speed, like a braking distance: a bike stops
+ * about 6 m before a car, so two vehicles leaving by the same arm do not end up on top of each other.
  */
 export function runOut(d: number, clear: number, speed: number) {
-  const total = 0.24 * speed * speed, brake = total * 0.4;
+  const total = 0.28 * speed * speed, brake = total * 0.4;
   const brakeFrom = clear + total - brake;
   if (d <= brakeFrom) return d;
   const x = Math.min(d - brakeFrom, brake);

@@ -13,6 +13,6 @@ test("vehicles brake to a stop shortly after the junction", () => {
   }
   expect(last).toBeLessThan(clear + 12); // stops well before the end of the road
   // A bike (4.5 m/s) stops far enough before a car (7 m/s) that a bike and a car leaving by the same arm do not overlap.
-  expect(runOut(1000, clear, 7) - runOut(1000, clear, 4.5)).toBeGreaterThan(4.5);
+  expect(runOut(1000, clear, 7) - runOut(1000, clear, 4.5)).toBeGreaterThan(5);
   expect(runOut(60, clear, 7)).toBe(runOut(1000, clear, 7)); // and stays there
 });
