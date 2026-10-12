@@ -31,6 +31,8 @@ for (const s of scenarios) {
       expect(s.choice.options.length).toBeGreaterThanOrEqual(2);
       expect(s.choice.options.length).toBeLessThanOrEqual(3); // big cards, no more than three
       expect(s.choice.options[s.choice.correct]).toBeDefined();
+      // Answers are button labels: no final full stop (reading aloud adds one after each option).
+      for (const o of s.choice.options) expect(o.endsWith("."), o).toBe(false);
     }
     // "Das rote Auto" must exist: catches explanations left behind after a recolour.
     for (const [, word, noun] of `${s.explain} ${s.choice?.question ?? ""}`.matchAll(NAMED)) {

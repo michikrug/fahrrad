@@ -359,7 +359,7 @@ const L6: Scenario[] = [
     participants: [you()],
     choice: {
       question: "Du willst geradeaus in die Straße vor dir fahren. Darfst du das?",
-      options: ["Ja, Radfahrer dürfen hier hineinfahren.", "Nein, hier darf niemand hinein.", "Nur wenn ich absteige und schiebe."],
+      options: ["Ja, Radfahrer dürfen hier hineinfahren", "Nein, hier darf niemand hinein", "Nur wenn ich absteige und schiebe"],
       correct: 0,
     },
     play: { groups: [["you"]] },
@@ -371,7 +371,7 @@ const L6: Scenario[] = [
     participants: [you()],
     choice: {
       question: "Du willst geradeaus in die Straße vor dir fahren. Darfst du das?",
-      options: ["Ja, mit dem Rad darf ich überall hinein.", "Nein, hier darf niemand hinein.", "Ja, wenn gerade kein Auto kommt."],
+      options: ["Ja, mit dem Rad darf ich überall hinein", "Nein, hier darf niemand hinein", "Ja, wenn gerade kein Auto kommt"],
       correct: 1,
     },
     explain: "Das rote Schild mit dem weißen Balken heißt: Verbot der Einfahrt. Es steht kein Zusatzschild darunter – also gilt es auch für dich.",
@@ -382,7 +382,7 @@ const L6: Scenario[] = [
     participants: [you("right")],
     choice: {
       question: "Du willst rechts in die Straße mit dem blauen Pfeil-Schild abbiegen. Darfst du das?",
-      options: ["Ja, ich fahre in Pfeilrichtung hinein.", "Nein, in eine Einbahnstraße darf ich nie.", "Ja, aber nur gegen die Pfeilrichtung."],
+      options: ["Ja, ich fahre in Pfeilrichtung hinein", "Nein, in eine Einbahnstraße darf ich nie", "Ja, aber nur gegen die Pfeilrichtung"],
       correct: 0,
     },
     play: { groups: [["you"]] },
@@ -425,7 +425,7 @@ const L7: Scenario[] = [
     participants: [you("left")],
     choice: {
       question: "Du folgst der Vorfahrtstraße nach links. Musst du ein Zeichen geben?",
-      options: ["Ja, ich strecke den linken Arm aus.", "Nein, ich habe ja Vorfahrt.", "Nur wenn ein Auto hinter mir fährt."],
+      options: ["Ja, ich strecke den linken Arm aus", "Nein, ich habe ja Vorfahrt", "Nur wenn ein Auto hinter mir fährt"],
       correct: 0,
     },
     play: { groups: [["you"]] }, // no hold: the arm is hidden in the bike view, a pause would have no visible reason
@@ -454,7 +454,7 @@ const L8: Scenario[] = [
     participants: [you("straight")],
     choice: {
       question: "Du fährst gleich in den Kreisverkehr hinein. Gibst du ein Zeichen?",
-      options: ["Nein, beim Hineinfahren nicht.", "Ja, den linken Arm.", "Ja, den rechten Arm."],
+      options: ["Nein, beim Hineinfahren nicht", "Ja, den linken Arm", "Ja, den rechten Arm"],
       correct: 0,
     },
     play: { groups: [["you"]] },
@@ -633,7 +633,7 @@ const L9: Scenario[] = [
     participants: [you("right")],
     choice: {
       question: "Du willst rechts in diese Straße abbiegen. Darfst du hineinfahren?",
-      options: ["Nein, hier darf niemand hinein.", "Ja, beim Abbiegen gilt das Schild nicht.", "Ja, wenn ich vorher klingle."],
+      options: ["Nein, hier darf niemand hinein", "Ja, beim Abbiegen gilt das Schild nicht", "Ja, wenn ich vorher klingle"],
       correct: 0,
     },
     explain: "Das rote Schild mit dem weißen Balken gilt auch, wenn du abbiegst. Ohne Zusatzschild darf niemand hinein – auch du nicht.",
