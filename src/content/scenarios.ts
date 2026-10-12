@@ -125,6 +125,7 @@ const L2: Scenario[] = [
       ],
       correct: 0,
     },
+    play: { groups: [["you"]] }, // no hold: the arm is hidden in the bike view, a pause would have no visible reason
     explain: "Vor dem Abbiegen schaust du nach hinten, ob jemand kommt, und zeigst mit dem Arm, wohin du willst. Dann fährst du bis zur Straßenmitte – das heißt „einordnen“. Kurz vor dem Abbiegen schaust du noch einmal nach hinten.",
   },
   {
@@ -409,6 +410,7 @@ const L7: Scenario[] = [
       options: ["Ja, ich strecke den linken Arm aus.", "Nein, ich habe ja Vorfahrt."],
       correct: 0,
     },
+    play: { groups: [["you"]] }, // no hold: the arm is hidden in the bike view, a pause would have no visible reason
     explain: "Wer der abknickenden Vorfahrtstraße folgt, muss das deutlich anzeigen. Mit dem Rad streckst du den linken Arm aus.",
   },
 ];
@@ -449,6 +451,7 @@ const L8: Scenario[] = [
       options: ["Rechten Arm ausstrecken", "Linken Arm ausstrecken", "Gar nichts"],
       correct: 0,
     },
+    play: { groups: [["you"]] },
     explain: "Beim Hinausfahren zeigst du mit dem rechten Arm an, dass du abbiegst.",
   },
 ];
