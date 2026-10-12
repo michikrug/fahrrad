@@ -53,7 +53,7 @@ There is **no traffic-rule solver**: the right answer is written by hand, like a
 
 ## Adding a sign
 
-Signs are drawn on canvas in `src/scene/signs.ts`, following the real StVO shapes, colours and white/black rims. Add the id to `SignId` in `types.ts`, draw it, and add a `signInfo` entry if it belongs in the cheat sheet. Check the result against the official image (Wikipedia "Bildtafel der Verkehrszeichen").
+Signs are drawn on canvas in `src/scene/signs.ts`, following the real StVO shapes, colours and white/black rims. Add the id to `SignId` in `types.ts`, draw it, and add a `signInfo` entry if it belongs in the cheat sheet. Check the result against the official image (Wikipedia "Bildtafel der Verkehrszeichen"). For detailed pictograms (325.1/325.2) the official SVG paths from Wikimedia Commons are embedded and drawn with `Path2D`; official signs are public domain (§ 5 UrhG).
 
 ## Gotchas (learned the hard way)
 
