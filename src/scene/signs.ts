@@ -89,48 +89,25 @@ function playStreet(c: Ctx, W: number, H: number, end: boolean) {
   c.restore();
 }
 
-/** The StVO bicycle pictogram: diamond frame, saddle on a post, handlebar on a raised stem. `s` ≈ half the wheelbase. */
-function bikeIcon(c: Ctx, x: number, y: number, s: number, color: string) {
-  c.strokeStyle = color;
-  c.lineWidth = s * 0.08;
-  c.lineCap = c.lineJoin = "round";
-  const p = (dx: number, dy: number) => [x + dx * s, y + dy * s] as const;
-  for (const dx of [-0.55, 0.55]) {
-    c.beginPath();
-    c.arc(...p(dx, 0.25), 0.33 * s, 0, Math.PI * 2);
-    c.stroke();
-  }
-  const line = (...pts: (readonly [number, number])[]) => {
-    c.beginPath();
-    c.moveTo(...pts[0]);
-    for (const q of pts.slice(1)) c.lineTo(...q);
-    c.stroke();
-  };
-  const rear = p(-0.55, 0.25), crank = p(-0.05, 0.25), seat = p(-0.2, -0.2), head = p(0.36, -0.2), front = p(0.55, 0.25);
-  line(rear, crank, seat, rear); // chain stay, seat tube, seat stay
-  line(seat, head, crank); // top tube, down tube
-  line(p(0.33, -0.32), front); // fork and head tube
-  line(seat, p(-0.23, -0.36)); // seat post
-  line(p(-0.36, -0.38), p(-0.1, -0.38)); // saddle
-  line(p(0.33, -0.32), p(0.3, -0.45), p(0.46, -0.45)); // stem and bar
-}
+// Pictograms from the official artwork on Wikimedia Commons (official signs are public domain, § 5 UrhG):
+// the bicycle from "Zusatzzeichen 1022-10 - Radfahrer frei, StVO 1992.svg", the walker on the crossing and its
+// white triangle from "Zeichen 350-10 - Fußgängerüberweg (rechts), StVO 1992.svg". SVG units, y pointing up.
+const BIKE = "m 203.723,303.598 c -8.727,0 -16.45,-5.676 -19.032,-14.024 l -14.464,-46.707 c -23.207,4.707 -46.508,-7.586 -55.75,-29.394 -10.707,-25.328 1.136,-54.543 26.453,-65.262 25.328,-10.73 54.539,1.109 65.258,26.438 10.718,25.328 -1.122,54.539 -26.45,65.257 l 3.965,12.782 58.859,-65.289 c 1.899,-2.098 4.575,-3.309 7.407,-3.309 l 20.918,0 c 0.383,-1.848 0.871,-3.672 1.449,-5.465 8.531,-26.144 36.629,-40.434 62.773,-31.894 26.145,8.519 40.43,36.613 31.903,62.757 -8.52,26.145 -36.614,40.438 -62.758,31.914 l -14.453,32.325 3.746,9.961 11.199,0 0,9.953 -42.336,0 c -1.14,0 -2.156,-0.782 -2.414,-1.903 -0.328,-1.332 0.496,-2.683 1.836,-2.996 l 21.074,-5.054 -3.746,-9.961 -88.953,0 4,12.902 c 1.297,4.176 5.148,7.012 9.516,7.012 l 16.375,0 0,9.957 -16.375,0 z m -16.598,-39.828 88.309,0 -25.957,-69.176 -62.352,69.176 z m 97.703,-3.321 10.317,-23.062 c -15.61,-8.832 -25.262,-25.406 -25.262,-43.336 l -9.957,0 24.902,66.398 z M 160.574,233.895 c 2.215,-0.012 4.449,-0.211 6.688,-0.61 l -11.676,-37.754 c -0.805,-2.625 0.648,-5.414 3.285,-6.23 2.625,-0.805 5.402,0.66 6.215,3.285 l 11.691,37.754 c 20.043,-9.086 28.934,-32.684 19.848,-52.715 -9.074,-20.043 -32.687,-28.934 -52.73,-19.848 -20.036,9.075 -28.938,32.688 -19.848,52.735 6.574,14.496 21.015,23.488 36.527,23.383 z m 155.696,-0.133 c 18.453,1.601 36.117,-9.906 41.601,-28.356 6.262,-21.093 -5.754,-43.281 -26.844,-49.535 -21.093,-6.262 -43.273,5.75 -49.535,26.844 -0.129,0.457 -0.269,0.91 -0.387,1.375 l 41.067,0 c 2.762,0 4.973,2.246 4.973,4.988 0,0.699 -0.141,1.395 -0.426,2.028 l -18.383,41.144 c 2.637,0.777 5.297,1.285 7.934,1.512 z m -17.04,-5.516 15.25,-34.195 -34.64,0 c 0,14.012 7.363,26.992 19.39,34.195 z";
+const BIKE_BOX = { cx: 240.005, cy: 223.92, w: 258.95 }; // bounding box of BIKE, measured with getBBox()
+const ZEBRA_TRIANGLE = "M 37.48,71.661 H 413.27 L 225.383,397.095";
+const ZEBRA_WALKER = "m 237.309,320.38 c 0,-9.641 -7.829,-17.469 -17.469,-17.469 -9.645,0 -17.461,7.828 -17.461,17.469 0,9.645 7.816,17.461 17.461,17.461 9.64,0 17.469,-7.816 17.469,-17.461 z m 8.734,-51.941 v -50.645 h -34.93 v 41.879 l -22.679,-34.926 c -4.602,-7.078 -14.063,-9.09 -21.137,-4.5 l 42.965,66.184 c 6.566,10.109 20.093,12.984 30.203,6.418 0.742,-0.488 1.453,-1.024 2.144,-1.59 l 29.305,-24.59 c 2.965,-2.488 4.68,-6.168 4.68,-10.031 v -21.387 c 0,-8.437 -6.848,-15.277 -15.278,-15.277 v 35.644 z M 228.57,204.63 187.344,128.689 c -4.602,-8.461 -15.199,-11.61 -23.672,-6.996 l 46.387,85.425 c 0.691,1.27 1.054,2.704 1.054,4.157 v 2.16 h 34.93 v -2.16 c 0,-1.453 0.348,-2.887 1.055,-4.157 l 34.675,-63.867 c 4.59,-8.472 1.454,-19.07 -7.019,-23.683 z m 105.407,-117 -28.204,63.879 h 28.375 L 372.313,87.63 Z m -63.879,0 -8.325,45.817 11.051,-20.375 4.215,2.285 c 10.801,5.871 14.809,19.375 8.938,30.164 l -3.247,5.988 h 4.122 L 308.434,87.63 Z m -63.879,0 4.976,63.879 h 28.371 l 4.989,-63.879 z m -63.891,0 21.57,63.879 h 10.508 l -17.23,-31.746 4.203,-2.285 c 8.152,-4.43 18.207,-3.34 25.215,2.75 l -5.93,-32.598 z m -63.875,0 38.16,63.879 h 28.375 L 116.773,87.63";
+const ZEBRA_SIZE = 450.75; // the 350 sign's square in these units
 
-function walkerIcon(c: Ctx, x: number, y: number, s: number, color: string) {
-  c.strokeStyle = c.fillStyle = color;
-  c.lineWidth = s * 0.14;
-  c.lineCap = "round";
-  circle(c, x + 0.05 * s, y - 0.75 * s, 0.14 * s);
-  c.fill();
-  c.beginPath();
-  c.moveTo(x, y - 0.5 * s);
-  c.lineTo(x - 0.05 * s, y + 0.05 * s); // body
-  c.lineTo(x - 0.35 * s, y + 0.55 * s); // back leg
-  c.moveTo(x - 0.05 * s, y + 0.05 * s);
-  c.lineTo(x + 0.3 * s, y + 0.55 * s); // front leg
-  c.moveTo(x - 0.3 * s, y - 0.1 * s);
-  c.lineTo(x, y - 0.4 * s);
-  c.lineTo(x + 0.3 * s, y - 0.15 * s); // arms
-  c.stroke();
+/** The StVO bicycle pictogram, `w` wide and centred on (x, y); `mirror` makes it face left (as on Z. 721). */
+function bikeIcon(c: Ctx, x: number, y: number, w: number, color: string, mirror = false) {
+  const k = w / BIKE_BOX.w;
+  c.save();
+  c.translate(x, y);
+  c.scale(mirror ? -k : k, -k);
+  c.translate(-BIKE_BOX.cx, -BIKE_BOX.cy);
+  c.fillStyle = color;
+  c.fill(new Path2D(BIKE));
+  c.restore();
 }
 
 /**
@@ -326,21 +303,14 @@ const SIGNS: Record<SignId, SignDef> = {
     paint: (c, W) => {
       roundRect(c, 2, 2, W - 4, W - 4, 10);
       fill(c, BLUE);
-      poly(c, 3, W * 0.45, -90, W / 2, W * 0.57);
-      fill(c, WHITE);
-      // Zebra stripes in perspective under the walker: fanning out towards the viewer.
+      c.save();
+      c.translate(0, W);
+      c.scale(W / ZEBRA_SIZE, -W / ZEBRA_SIZE);
+      c.fillStyle = WHITE;
+      c.fill(new Path2D(ZEBRA_TRIANGLE));
       c.fillStyle = BLACK;
-      for (let i = -2; i <= 2; i++) {
-        const top = W * (0.5 + i * 0.085), bot = W * (0.5 + i * 0.105);
-        c.beginPath();
-        c.moveTo(top - W * 0.025, W * 0.69);
-        c.lineTo(top + W * 0.025, W * 0.69);
-        c.lineTo(bot + W * 0.032, W * 0.775);
-        c.lineTo(bot - W * 0.032, W * 0.775);
-        c.closePath();
-        c.fill();
-      }
-      walkerIcon(c, W * 0.5, W * 0.48, W * 0.24, BLACK);
+      c.fill(new Path2D(ZEBRA_WALKER)); // walker and the crossing's stripes in one shape
+      c.restore();
     },
   },
   // Grünpfeil
@@ -364,7 +334,7 @@ const SIGNS: Record<SignId, SignDef> = {
       c.textAlign = "center";
       c.textBaseline = "middle";
       c.fillText("nur", W / 2, H * 0.55);
-      bikeIcon(c, W / 2, H * 0.76, W * 0.27, BLACK);
+      bikeIcon(c, W / 2, H * 0.78, W * 0.52, BLACK, true); // faces left on the real sign
     },
   },
   // Zusatzzeichen: course of the bending priority road, seen by traffic on this arm (arriving from the bottom)
@@ -410,7 +380,7 @@ const SIGNS: Record<SignId, SignDef> = {
       fill(c, BLACK);
       roundRect(c, 6, 6, W - 12, H - 12, 4);
       fill(c, WHITE);
-      bikeIcon(c, W / 2, H * 0.34, H * 0.3, BLACK);
+      bikeIcon(c, W / 2, H * 0.32, W * 0.56, BLACK);
       arrow(c, W * 0.68, W * 0.32, H * 0.68, H * 0.05, BLACK);
       arrow(c, W * 0.32, W * 0.68, H * 0.82, H * 0.05, BLACK);
     },
@@ -424,7 +394,7 @@ const SIGNS: Record<SignId, SignDef> = {
       fill(c, BLACK);
       roundRect(c, 6, 6, W - 12, H - 12, 4);
       fill(c, WHITE);
-      bikeIcon(c, W / 2, H * 0.33, H * 0.3, BLACK);
+      bikeIcon(c, W / 2, H * 0.375, W * 0.54, BLACK);
       c.fillStyle = BLACK;
       c.font = `700 ${H * 0.28}px Arial, sans-serif`;
       c.textAlign = "center";
