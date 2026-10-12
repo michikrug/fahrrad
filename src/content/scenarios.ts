@@ -301,7 +301,7 @@ const L5: Scenario[] = [
   {
     id: "zebra-push", rule: "zebra-schieben", title: "Zebrastreifen: schieben", view: "ego",
     layout: cross({ S: { zebra: true } }),
-    participants: [you()],
+    participants: [you("straight", { crossing: -1 })], // on foot across the stripes, not along the road
     choice: {
       question: "Vor dir ist ein Zebrastreifen, und du willst auf die andere Seite. Wie kommst du am sichersten hinüber?",
       options: ["Absteigen und das Rad schieben", "Schnell hinüberfahren", "Klingeln und weiterfahren"],
@@ -312,7 +312,7 @@ const L5: Scenario[] = [
   {
     id: "zebra-why", rule: "zebra-schieben", title: "Warum schieben?",
     layout: cross({ S: { zebra: true } }),
-    participants: [you()],
+    participants: [you("straight", { crossing: -1 })], // on foot across the stripes, not along the road
     choice: {
       question: "Warum steigst du am Zebrastreifen vom Rad ab?",
       options: [

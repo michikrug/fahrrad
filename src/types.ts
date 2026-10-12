@@ -23,6 +23,8 @@ export interface Participant {
   /** Roundabout: already driving on the ring, just past the entry of `arm`. */
   inRing?: boolean;
   color?: number;
+  /** Vehicles: walk across this arm's crossing instead of driving, starting on the right (1) or left (-1) sidewalk. */
+  crossing?: 1 | -1;
 }
 
 export interface ArmSpec {

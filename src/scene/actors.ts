@@ -261,9 +261,11 @@ export function buildActor(p: Participant, layout: Layout): Actor {
     for (const m of [...signal.left, ...signal.right]) model.add(m);
   }
 
+  // Pushing the bike over a zebra crossing: same line and pace as a pedestrian.
+  const onFoot = p.kind === "pedestrian" || p.crossing !== undefined;
   const { path, clear, enter } =
-    p.kind === "pedestrian"
-      ? crossPath(layout, p.arm, p.side ?? 1)
+    onFoot
+      ? crossPath(layout, p.arm, p.crossing ?? p.side ?? 1)
       : lanePath(
           layout, p.arm, p.move ?? "straight", isBike ? ROAD_HALF - 0.7 : ROAD_HALF / 2, l, p.inRing, p.back,
           // § 9 Abs. 1 StVO: left-turners "bis zur Mitte einordnen" — bikes wait just right of the centre line.
@@ -274,8 +276,8 @@ export function buildActor(p: Participant, layout: Layout): Actor {
   // than the last so crossing arrows don't z-fight. All sit above sidewalk height: pedestrians walk
   // there, and bikes turn so close to the curb that the arrowhead reaches over the corner.
   const y = CURB + 0.02 + (routeCount++ % 10) * 0.004;
-  const route = routeArrow(path, p.kind === "pedestrian" ? 0.4 : l / 2 + 0.3, Math.min(clear + 4, path.getLength()), color, y);
-  const actor: Actor = { p, obj: model, path, clear, enter, route, color, pin, signal, d: 0, len: l, speed: SPEED[p.kind] };
+  const route = routeArrow(path, onFoot ? 0.4 : l / 2 + 0.3, Math.min(clear + 4, path.getLength()), color, y);
+  const actor: Actor = { p, obj: model, path, clear, enter, route, color, pin, signal, d: 0, len: l, speed: SPEED[onFoot ? "pedestrian" : p.kind] };
   placeAt(actor, 0);
   return actor;
 }
