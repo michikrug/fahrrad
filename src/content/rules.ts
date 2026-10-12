@@ -2,8 +2,9 @@ import type { RuleCard, SignId } from "../types";
 
 // Lernkarten and the sign cheat sheet. Kid-friendly German; every card cites the StVO passage it
 // rests on. Checked against gesetze-im-internet.de (StVO 2013) on 2026-10-08.
-// Deliberately NOT taught (no primary source found yet): "am Zebrastreifen absteigen und schieben",
-// meaning of Rot-Gelb, direct vs. indirect left turn as taught in the Radfahrprüfung.
+// Not from the StVO text alone, so the card says where it comes from: "Zebrastreifen schieben" (the law only
+// says vehicles let pedestrians cross; ADAC and police read that as: only pushing counts) and the direct vs.
+// indirect left turn (§ 9 Abs. 2 allows crossing from the right edge; when to choose which is police teaching).
 
 const STVO = "https://www.gesetze-im-internet.de/stvo_2013/";
 
@@ -73,11 +74,27 @@ export const rules: RuleCard[] = [
     url: `${STVO}__26.html`,
   },
   {
+    id: "zebra-schieben",
+    title: "Am Zebrastreifen schieben",
+    text: "Fährst du mit dem Rad über den Zebrastreifen, müssen die Autos dich nicht vorlassen. Steig lieber ab und schiebe dein Rad: Dann bist du ein Fußgänger, und alle Fahrzeuge müssen dich hinüberlassen.",
+    signs: ["350"],
+    source: "ADAC und Polizei NRW zu § 26 StVO",
+    url: "https://www.adac.de/verkehr/recht/verkehrsvorschriften-deutschland/zebrastreifen/",
+  },
+  {
     id: "ampel",
     icon: "🚦",
     title: "Ampel",
     text: "Grün heißt: Du darfst fahren. Gelb heißt: Vor der Kreuzung warten. Rot heißt: Halt vor der Kreuzung! Als Radfahrer achtest du auf die Ampel für die Fahrzeuge. Fährst du auf einem Radweg mit eigener Fahrrad-Ampel, gilt die Fahrrad-Ampel.",
     source: "§ 37 Abs. 2 Nr. 1 und 6 StVO",
+    url: `${STVO}__37.html`,
+  },
+  {
+    id: "rot-gelb",
+    icon: "🚥",
+    title: "Rot und Gelb zusammen",
+    text: "Leuchten Rot und Gelb gleichzeitig, wird es gleich Grün. Aber noch leuchtet Rot, und Rot heißt: Halt! Du wartest, bis Grün leuchtet.",
+    source: "§ 37 Abs. 2 Nr. 1 StVO",
     url: `${STVO}__37.html`,
   },
   {
@@ -118,6 +135,14 @@ export const rules: RuleCard[] = [
     title: "Zeichen geben",
     text: "Bevor du abbiegst, schaust du über die Schulter nach hinten und streckst den Arm in die Richtung, in die du willst. Autos blinken. Willst du links abbiegen, fährst du dann rechtzeitig bis zur Straßenmitte („einordnen“). Kurz vor dem Abbiegen schaust du noch einmal nach hinten.",
     source: "§ 9 Abs. 1 StVO",
+    url: `${STVO}__9.html`,
+  },
+  {
+    id: "links-abbiegen",
+    icon: "↩️",
+    title: "Links abbiegen: direkt oder indirekt",
+    text: "Direkt biegst du auf der Fahrbahn ab, nachdem du dich eingeordnet hast. Indirekt steigst du ab und überquerst die Straße zu Fuß. Das ist sicherer. Auf großen Kreuzungen mit viel Verkehr und wenn du dich unsicher fühlst, biegst du indirekt ab. In ruhigen Straßen darfst du direkt abbiegen, wenn du dir sicher bist.",
+    source: "§ 9 Abs. 1 und 2 StVO; Polizei Steinfurt, Radfahrausbildung",
     url: `${STVO}__9.html`,
   },
   {

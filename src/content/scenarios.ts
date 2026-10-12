@@ -127,6 +127,36 @@ const L2: Scenario[] = [
     },
     explain: "Vor dem Abbiegen schaust du nach hinten, ob jemand kommt, und zeigst mit dem Arm, wohin du willst. Dann fährst du bis zur Straßenmitte – das heißt „einordnen“. Kurz vor dem Abbiegen schaust du noch einmal nach hinten.",
   },
+  {
+    id: "left-busy", rule: "links-abbiegen", title: "Links abbiegen: viel Verkehr", view: "ego",
+    layout: cross(),
+    participants: [you("left"), car("car", "N", "straight", RED)],
+    choice: {
+      question: "Du willst links abbiegen. Die Kreuzung ist groß und viel befahren. Wie biegst du am sichersten ab?",
+      options: [
+        "Indirekt: absteigen und die Straße zu Fuß überqueren",
+        "Direkt: schnell vor dem Gegenverkehr abbiegen",
+        "Direkt: losfahren, ohne zu schauen",
+      ],
+      correct: 0,
+    },
+    explain: "Auf großen Kreuzungen mit viel Verkehr ist indirektes Abbiegen am sichersten. Du steigst ab und gehst die Straße zu Fuß hinüber. Dann bist du ein Fußgänger.",
+  },
+  {
+    id: "left-unsure", rule: "links-abbiegen", title: "Links abbiegen: unsicher", view: "ego",
+    layout: cross(),
+    participants: [you("left")],
+    choice: {
+      question: "Du willst links abbiegen. Die Straße ist ruhig, aber du fühlst dich unsicher. Was ist am besten?",
+      options: [
+        "Indirekt abbiegen: absteigen und zu Fuß hinüber",
+        "Einfach schnell abbiegen, dann ist es vorbei",
+        "Direkt abbiegen, die anderen schaffen das auch",
+      ],
+      correct: 0,
+    },
+    explain: "Wenn du dich unsicher fühlst, wählst du immer den sicheren Weg: indirekt abbiegen. In ruhigen Straßen darfst du direkt abbiegen, aber nur, wenn du dir sicher bist.",
+  },
 ];
 
 const L3: Scenario[] = [
@@ -222,6 +252,17 @@ const L4: Scenario[] = [
     },
     explain: "Der grüne Pfeil mit Fahrrad gilt nur für Radfahrer. Du darfst bei Rot rechts abbiegen – aber erst, nachdem du angehalten und geschaut hast.",
   },
+  {
+    id: "light-redyellow", rule: "rot-gelb", title: "Ampel rot und gelb", view: "ego",
+    layout: lights("redyellow", "red"),
+    participants: [you("straight", { back: 6 })], // further back so the signal head is in view
+    choice: {
+      question: "Deine Ampel zeigt Rot und Gelb zusammen. Was machst du?",
+      options: ["Noch warten, bis Grün leuchtet", "Losfahren, denn Gelb leuchtet schon", "Klingeln, damit die Ampel umschaltet"],
+      correct: 0,
+    },
+    explain: "Rot und Gelb zusammen heißt: Gleich wird es Grün. Aber noch leuchtet Rot, und Rot heißt Halt. Du wartest, bis Grün leuchtet.",
+  },
 ];
 
 const L5: Scenario[] = [
@@ -256,6 +297,32 @@ const L5: Scenario[] = [
       correct: 0,
     },
     explain: "Wer erkennbar über den Zebrastreifen gehen will, muss hinübergelassen werden. Du fährst langsam heran und hältst an.",
+  },
+  {
+    id: "zebra-push", rule: "zebra-schieben", title: "Zebrastreifen: schieben", view: "ego",
+    layout: cross({ S: { zebra: true } }),
+    participants: [you()],
+    choice: {
+      question: "Vor dir ist ein Zebrastreifen, und du willst auf die andere Seite. Wie kommst du am sichersten hinüber?",
+      options: ["Absteigen und das Rad schieben", "Schnell hinüberfahren", "Klingeln und weiterfahren"],
+      correct: 0,
+    },
+    explain: "Am Zebrastreifen steigst du ab und schiebst dein Rad. Dann bist du ein Fußgänger, und die Autos müssen dich hinüberlassen.",
+  },
+  {
+    id: "zebra-why", rule: "zebra-schieben", title: "Warum schieben?",
+    layout: cross({ S: { zebra: true } }),
+    participants: [you()],
+    choice: {
+      question: "Warum steigst du am Zebrastreifen vom Rad ab?",
+      options: [
+        "Dann bin ich Fußgänger, und die Autos müssen mich hinüberlassen",
+        "Weil Radfahren auf dem Zebrastreifen verboten ist",
+        "Damit mein Rad nicht schmutzig wird",
+      ],
+      correct: 0,
+    },
+    explain: "Wenn du fährst, müssen die Autos dich nicht vorlassen. Wenn du schiebst, bist du ein Fußgänger und hast Vorrang. Fahren ist nicht verboten, aber schieben ist sicherer.",
   },
 ];
 
