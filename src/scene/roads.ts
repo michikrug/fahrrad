@@ -116,10 +116,11 @@ export function lanePath(
 }
 
 /** Pedestrian walking across an arm on its crossing (or just past the junction if there is none). */
-export function crossPath(layout: Layout, arm: Arm, side: 1 | -1, reach = ROAD_HALF + 1.9, raised = false): Lane {
+export function crossPath(layout: Layout, arm: Arm, side: 1 | -1, reach = ROAD_HALF + 1.9, raised = false, further = 0): Lane {
   const [a, b] = crossingBand(layout);
   // Walkers from opposite sides keep to their right half of the crossing, so they pass instead of colliding.
-  const s = (hasCrossing(layout.arms[arm]) ? (a + b) / 2 : edgeDist(layout) + 1.5) + side * 0.6;
+  // `further`: metres further out along the arm, e.g. a child crossing in the middle of a street.
+  const s = (hasCrossing(layout.arms[arm]) ? (a + b) / 2 : edgeDist(layout) + 1.5) + side * 0.6 + further;
   // `reach`: how far from the road's centre the walk starts. Default mid-sidewalk, clear of the sign posts at the curb.
   const across = rightOf(DIR[arm]).multiplyScalar(1);
   const at = DIR[arm].clone().multiplyScalar(s);
@@ -140,6 +141,7 @@ const mat = {
   asphalt: new THREE.MeshLambertMaterial({ color: 0x4a4d52 }),
   walk: new THREE.MeshLambertMaterial({ color: 0xc9c3b8 }),
   drive: new THREE.MeshLambertMaterial({ color: 0x9c958c }),
+  pavers: new THREE.MeshLambertMaterial({ color: 0xa88f80 }), // red-grey paving of a verkehrsberuhigter Bereich
   white: new THREE.MeshLambertMaterial({ color: 0xffffff }),
   island: new THREE.MeshLambertMaterial({ color: 0x6fb85a }),
 };
@@ -249,17 +251,19 @@ export function buildRoads(layout: Layout): THREE.Group {
       continue;
     }
     const start = edge - (layout.roundabout ? 1 : 0);
-    g.add(slab(...armRect(arm, start, ARM_LEN, -ROAD_HALF, ROAD_HALF), 0.02, mat.asphalt));
+    g.add(slab(...armRect(arm, start, ARM_LEN, -ROAD_HALF, ROAD_HALF), 0.02, spec.zone ? mat.pavers : mat.asphalt));
     // Sidewalks on both sides. N/S ones start at the road edge and so also fill the corner
     // squares; E/W start past them to avoid coplanar z-fighting.
     const walkStart = layout.roundabout ? RING_WALK_END : isNS(arm) ? ROAD_HALF : ROAD_HALF + WALK;
-    g.add(slab(...armRect(arm, walkStart, ARM_LEN, ROAD_HALF, ROAD_HALF + WALK), CURB, mat.walk));
-    g.add(slab(...armRect(arm, walkStart, ARM_LEN, -ROAD_HALF - WALK, -ROAD_HALF), CURB, mat.walk));
+    // A verkehrsberuhigter Bereich is one level surface: sidewalks flush with the road, just a different colour.
+    const walkH = spec.zone ? 0.04 : CURB;
+    g.add(slab(...armRect(arm, walkStart, ARM_LEN, ROAD_HALF, ROAD_HALF + WALK), walkH, mat.walk));
+    g.add(slab(...armRect(arm, walkStart, ARM_LEN, -ROAD_HALF - WALK, -ROAD_HALF), walkH, mat.walk));
 
     const line = (a: number, b: number, l0: number, l1: number) => g.add(slab(...armRect(arm, a, b, l0, l1), 0.01, mat.white, 0.02));
     const stop = stopLine(layout, arm);
     // Dashed centre line, starting behind the stop line like real markings.
-    if (!spec.oneway) for (let s = straight ? 0.5 : stop + 2; s < ARM_LEN; s += 6) line(s, s + 3, -0.06, 0.06);
+    if (!spec.oneway && !spec.zone) for (let s = straight ? 0.5 : stop + 2; s < ARM_LEN; s += 6) line(s, s + 3, -0.06, 0.06);
 
     // Stop line across the arriving lane (left half of the road seen from outside = right lane of arriving traffic):
     // solid "Haltlinie" (Z. 294) at stop signs and lights, dashed "Wartelinie" (Z. 341) at give-way.

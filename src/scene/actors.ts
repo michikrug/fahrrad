@@ -278,7 +278,7 @@ export function buildActor(p: Participant, layout: Layout): Actor {
     onFoot
       ? // A bike waits on the sidewalk at the curb, facing the crossing, far enough back that its front wheel is still on it.
         p.kind === "pedestrian"
-          ? crossPath(layout, p.arm, p.side ?? 1)
+          ? crossPath(layout, p.arm, p.side ?? 1, undefined, false, p.back ?? 0)
           : crossPath(layout, p.arm, p.crossing!, ROAD_HALF + l / 2 + 0.3, true)
       : lanePath(
           layout, p.arm, p.move ?? "straight", isBike ? ROAD_HALF - 0.7 : ROAD_HALF / 2, l, p.inRing, p.back,

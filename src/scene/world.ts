@@ -97,16 +97,26 @@ export function buildLevel(layout: Layout) {
       lights.set(arm, l.control);
     }
     // Signs for arriving traffic, behind the signal pole if there is one. Zebra sign joins the same post.
-    const arriving = [...(spec.signs ?? []), ...(spec.zebra ? (["350"] as const) : [])];
+    const arriving = [...(spec.signs ?? []), ...(spec.zone ? (["325.2"] as const) : []), ...(spec.zebra ? (["350"] as const) : [])];
     if (arriving.length) group.add(signPost(arriving, info, at(stopLine(layout, arm) + (spec.light ? 2 : 0.5), arriveRight), out));
     // Signs at the mouth for traffic turning into this arm. 220 hangs parallel to the road.
     const parallel = (id: SignId) => id === "220" || id === "1000-32";
-    const exiting = [...(spec.exitSigns ?? []).filter((id) => !parallel(id)), ...(spec.zebra ? (["350"] as const) : [])];
+    const exiting = [
+      ...(spec.exitSigns ?? []).filter((id) => !parallel(id)), ...(spec.zone ? (["325.1"] as const) : []), ...(spec.zebra ? (["350"] as const) : []),
+    ];
     if (exiting.length) group.add(signPost(exiting, info, at(edge + 0.6, exitRight), out.clone().negate()));
     const along = (spec.exitSigns ?? []).filter(parallel);
     // Facing away from the road, towards traffic on the crossing street on that corner's side: from
     // there you see the face with the post behind it, not the post cutting through the back.
     if (along.length) group.add(signPost(along, info, at(edge + 4, exitRight), rightOf(out), 2.8));
+
+    if (spec.zone) {
+      // Children may play anywhere here: a ball on the street says so at a glance.
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 12), new THREE.MeshLambertMaterial({ color: 0xe23d6e }));
+      ball.position.copy(at(16, rightOf(out).multiplyScalar(-1.2))).setY(0.27);
+      ball.castShadow = true;
+      group.add(ball);
+    }
 
     if (spec.busStop) {
       // Bus on the arriving lane (that traffic's right-hand side), front 6.5 m from the centre; stop sign at its front.

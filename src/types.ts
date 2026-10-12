@@ -7,7 +7,7 @@ type Kind = "car" | "bus" | "bike" | "player" | "pedestrian";
 
 /** StVO sign numbers we can draw. "1002" = Zusatzzeichen for the bending priority road (drawn from Layout.priority). */
 export type SignId =
-  | "102" | "205" | "206" | "215" | "220" | "267" | "301" | "306" | "350" | "720" | "721" | "1002" | "1022-10" | "1000-32" | "224";
+  | "102" | "205" | "206" | "215" | "220" | "267" | "301" | "306" | "350" | "720" | "721" | "1002" | "1022-10" | "1000-32" | "224" | "325.1" | "325.2";
 
 export type Phase = "red" | "redyellow" | "yellow" | "green";
 
@@ -18,7 +18,7 @@ export interface Participant {
   move?: Move; // default straight
   /** Pedestrians: start on the right (1) or left (-1) sidewalk, looking out along the arm from the junction. */
   side?: 1 | -1;
-  /** Metres further back than the front of the queue, e.g. a car waiting behind a bike on the same arm. */
+  /** Metres further back than the front of the queue, e.g. a car waiting behind a bike on the same arm. Walkers: cross that much further out. */
   back?: number;
   /** Roundabout: already driving on the ring, just past the entry of `arm`. */
   inRing?: boolean;
@@ -42,6 +42,11 @@ export interface ArmSpec {
    * participant: it does not move and is not tapped. A kid "getting off" is a walker on this arm's left side.
    */
   busStop?: true;
+  /**
+   * This road is a verkehrsberuhigter Bereich (Z. 325.1/325.2): paved, flush sidewalks, no centre line.
+   * 325.1 stands at its mouth for traffic turning in, 325.2 for traffic coming out (§ 10 applies there).
+   */
+  zone?: true;
 }
 
 export interface Layout {

@@ -55,6 +55,55 @@ function warnTriangle(c: Ctx, W: number, down = false) {
   fill(c, WHITE);
 }
 
+/**
+ * Z. 325.1 pictogram, simplified: house, an adult with a child playing ball, and a car, white on blue.
+ * `end` (Z. 325.2) adds the red diagonal bar.
+ */
+function playStreet(c: Ctx, W: number, H: number, end: boolean) {
+  roundRect(c, 2, 2, W - 4, H - 4, 8);
+  fill(c, BLUE);
+  c.fillStyle = c.strokeStyle = WHITE;
+  const g = H * 0.8; // ground line
+  c.fillRect(W * 0.06, g, W * 0.88, H * 0.025);
+  // House
+  c.fillRect(W * 0.08, H * 0.42, W * 0.17, g - H * 0.42);
+  c.beginPath();
+  c.moveTo(W * 0.05, H * 0.43); c.lineTo(W * 0.165, H * 0.24); c.lineTo(W * 0.28, H * 0.43);
+  c.closePath();
+  c.fill();
+  // Adult and child: heads and bodies, arms out to the ball
+  const person = (x: number, h: number) => {
+    circle(c, x, g - h, h * 0.13);
+    c.fill();
+    c.lineWidth = h * 0.12;
+    c.lineCap = "round";
+    c.beginPath();
+    c.moveTo(x, g - h * 0.85); c.lineTo(x, g - h * 0.4); // body
+    c.moveTo(x, g - h * 0.4); c.lineTo(x - h * 0.15, g); c.moveTo(x, g - h * 0.4); c.lineTo(x + h * 0.15, g); // legs
+    c.moveTo(x - h * 0.2, g - h * 0.65); c.lineTo(x + h * 0.25, g - h * 0.7); // arms
+    c.stroke();
+  };
+  person(W * 0.38, H * 0.5);
+  person(W * 0.52, H * 0.33);
+  circle(c, W * 0.6, g - H * 0.05, H * 0.045);
+  c.fill();
+  // Car
+  roundRect(c, W * 0.67, g - H * 0.2, W * 0.26, H * 0.12, H * 0.03);
+  c.fill();
+  roundRect(c, W * 0.72, g - H * 0.29, W * 0.13, H * 0.1, H * 0.03);
+  c.fill();
+  for (const x of [0.73, 0.87]) (circle(c, W * x, g - H * 0.07, H * 0.045), fill(c, BLUE), circle(c, W * x, g - H * 0.07, H * 0.03), fill(c, WHITE));
+  if (end) {
+    c.strokeStyle = WHITE;
+    c.lineCap = "butt";
+    c.lineWidth = H * 0.14;
+    c.beginPath(); c.moveTo(W * 0.08, H * 0.9); c.lineTo(W * 0.92, H * 0.1); c.stroke();
+    c.strokeStyle = RED;
+    c.lineWidth = H * 0.09;
+    c.stroke();
+  }
+}
+
 /** The StVO bicycle pictogram: diamond frame, saddle on a post, handlebar on a raised stem. `s` ≈ half the wheelbase. */
 function bikeIcon(c: Ctx, x: number, y: number, s: number, color: string) {
   c.strokeStyle = color;
@@ -283,6 +332,9 @@ const SIGNS: Record<SignId, SignDef> = {
       c.fillText("H", W / 2, W / 2 + W * 0.02);
     },
   },
+  // Verkehrsberuhigter Bereich (Beginn / Ende)
+  "325.1": { w: 0.9, h: 0.6, rim: { k: 0.95 }, shape: (c, W, H) => roundRect(c, 2, 2, W - 4, H - 4, 8), paint: (c, W, H) => playStreet(c, W, H, false) },
+  "325.2": { w: 0.9, h: 0.6, rim: { k: 0.95 }, shape: (c, W, H) => roundRect(c, 2, 2, W - 4, H - 4, 8), paint: (c, W, H) => playStreet(c, W, H, true) },
   "350": {
     w: 0.7, h: 0.7, rim: { k: 0.94 },
     shape: (c, W) => roundRect(c, 2, 2, W - 4, W - 4, 10),

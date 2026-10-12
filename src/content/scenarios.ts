@@ -513,6 +513,31 @@ const L10: Scenario[] = [
     play: { groups: [["you"]] },
     explain: "Bei einem Bus mit Warnblinkern fährst du nur in Schrittgeschwindigkeit vorbei – auch auf der anderen Straßenseite. Aus dem Bus können Kinder kommen und über die Straße laufen.",
   },
+  {
+    id: "zone-speed", rule: "spielstrasse", title: "Spielstraße: wie schnell?", view: "ego",
+    layout: cross({ N: { zone: true } }),
+    participants: [you("straight", { back: 6 }), walker("kid", "N", 1, TEAL)], // back: so the sign is in view
+    choice: {
+      question: "Vor dir beginnt ein verkehrsberuhigter Bereich. Wie schnell darfst du dort fahren?",
+      options: ["Nur Schrittgeschwindigkeit", "So schnell wie auf anderen Straßen", "Schnell, damit ich nicht lange störe"],
+      correct: 0,
+    },
+    explain: "Das blaue Schild mit Haus, Kind und Auto zeigt einen verkehrsberuhigten Bereich. Dort fahren alle nur Schrittgeschwindigkeit, denn Kinder dürfen überall spielen.",
+  },
+  {
+    id: "zone-kid", rule: "spielstrasse", title: "Kind auf der Spielstraße",
+    layout: cross({ N: { zone: true } }),
+    participants: [you(), { ...walker("kid", "N", 1, TEAL), back: 6 }], // crosses in the middle of the zone street
+    answer: [["kid"], ["you"]],
+    explain: "Im verkehrsberuhigten Bereich dürfen Kinder überall auf der Straße gehen und spielen. Du fährst ganz langsam und lässt den Jungen zuerst hinüber.",
+  },
+  {
+    id: "zone-exit", rule: "spielstrasse-ende", title: "Raus aus der Spielstraße",
+    layout: cross({ S: { zone: true } }),
+    participants: [you(), car("car", "W", "straight", BLUE)],
+    answer: [["car"], ["you"]],
+    explain: "Du kommst aus einem verkehrsberuhigten Bereich, das zeigt das Schild mit dem roten Strich. Dann lässt du alle zuerst fahren – auch das blaue Auto, obwohl es von links kommt.",
+  },
 ];
 
 const L9: Scenario[] = [
