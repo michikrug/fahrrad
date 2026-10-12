@@ -445,6 +445,7 @@ const L8: Scenario[] = [
 
 // Final test: no route arrows — kids read the situation, blinkers and signs themselves.
 const L9: Scenario[] = [
+  // One task per topic, no route arrows. Mixes "tap in order" and choice tasks, like the levels before.
   {
     id: "exam-bus", rule: "rechts-vor-links", title: "Prüfung: Bus von rechts", hideRoutes: true,
     layout: cross(),
@@ -460,11 +461,11 @@ const L9: Scenario[] = [
     explain: "Ihr seid beide auf der Vorfahrtstraße. Du biegst links ab und musst den Gegenverkehr durchlassen.",
   },
   {
-    id: "exam-tee", rule: "rechts-vor-links", title: "Prüfung: T-Kreuzung", hideRoutes: true,
-    layout: tee(),
-    participants: [you("left"), car("car", "E", "straight", PURPLE)],
+    id: "exam-stop", rule: "stopp", title: "Prüfung: Stoppschild", hideRoutes: true,
+    layout: cross({ N: { signs: ["206"] }, S: { signs: ["206"] }, E: { signs: ["301"] }, W: { signs: ["301"] } }),
+    participants: [you(), car("car", "E", "straight", PURPLE)],
     answer: [["car"], ["you"]],
-    explain: "Das lila Auto kommt von deiner rechten Seite. Rechts vor links – es fährt zuerst.",
+    explain: "Du hast das Stoppschild. Du hältst an der Linie ganz an und lässt das lila Auto zuerst fahren, denn es hat Vorfahrt.",
   },
   {
     id: "exam-light", rule: "ampel", title: "Prüfung: Ampel", hideRoutes: true,
@@ -472,6 +473,57 @@ const L9: Scenario[] = [
     participants: [you(), car("car", "W", "straight", BLUE)],
     answer: [["car"], ["you"]],
     explain: "Deine Ampel ist rot. Das blaue Auto hat Grün – auch wenn es von links kommt. Die Ampel geht vor.",
+  },
+  {
+    id: "exam-redyellow", rule: "rot-gelb", title: "Prüfung: Rot und Gelb", view: "ego",
+    layout: lights("redyellow", "red"),
+    participants: [you("straight", { back: 6 })],
+    choice: {
+      question: "Deine Ampel zeigt Rot und Gelb zusammen. Was machst du?",
+      options: ["Losfahren, denn Gelb leuchtet schon", "Noch warten, bis Grün leuchtet", "Schnell vorbeifahren"],
+      correct: 1,
+    },
+    explain: "Rot und Gelb zusammen heißt: Gleich wird es Grün. Aber noch leuchtet Rot, und Rot heißt Halt. Du wartest, bis Grün leuchtet.",
+  },
+  {
+    id: "exam-zebra", rule: "zebrastreifen", title: "Prüfung: Zebrastreifen", hideRoutes: true,
+    layout: cross({ S: { zebra: true } }),
+    participants: [you(), walker("kid", "S", -1, TEAL)],
+    answer: [["kid"], ["you"]],
+    explain: "Das Kind will über den Zebrastreifen. Du hältst an und lässt es hinübergehen.",
+  },
+  {
+    id: "exam-push", rule: "zebra-schieben", title: "Prüfung: Rad am Zebrastreifen", view: "ego",
+    layout: cross({ S: { zebra: true } }),
+    participants: [you("straight", { crossing: -1 })],
+    choice: {
+      question: "Du willst mit dem Rad über den Zebrastreifen auf die andere Seite. Was ist richtig?",
+      options: ["Schnell hinüberfahren, die Autos bremsen schon", "Absteigen und das Rad schieben", "Klingeln und weiterfahren"],
+      correct: 1,
+    },
+    explain: "Am Zebrastreifen steigst du ab und schiebst dein Rad. Dann bist du ein Fußgänger, und die Autos müssen dich hinüberlassen.",
+  },
+  {
+    id: "exam-oneway", rule: "einbahn", title: "Prüfung: Einbahnstraße", view: "ego",
+    layout: cross({ N: { oneway: true, exitSigns: ["267"] } }),
+    participants: [you()],
+    choice: {
+      question: "Du willst geradeaus in die Straße vor dir fahren. Darfst du das?",
+      options: ["Nein, hier darf niemand hinein.", "Ja, mit dem Rad darf ich überall hinein."],
+      correct: 0,
+    },
+    explain: "Das rote Schild mit dem weißen Balken heißt: Verbot der Einfahrt. Es steht kein Zusatzschild darunter – also gilt es auch für dich.",
+  },
+  {
+    id: "exam-left", rule: "links-abbiegen", title: "Prüfung: Links abbiegen", view: "ego",
+    layout: cross(),
+    participants: [you("left"), car("car", "N", "straight", RED)],
+    choice: {
+      question: "Du willst links abbiegen. Die Kreuzung ist groß und viel befahren. Wie biegst du am sichersten ab?",
+      options: ["Direkt: schnell vor dem Gegenverkehr abbiegen", "Direkt: losfahren, ohne zu schauen", "Indirekt: absteigen und die Straße zu Fuß überqueren"],
+      correct: 2,
+    },
+    explain: "Auf großen Kreuzungen mit viel Verkehr ist indirektes Abbiegen am sichersten. Du steigst ab und gehst die Straße zu Fuß hinüber.",
   },
   {
     id: "exam-round", rule: "kreisverkehr", title: "Prüfung: Kreisverkehr", hideRoutes: true,
