@@ -331,7 +331,10 @@ function stepSim(dt: number) {
       r.released = true;
       switchLightsFor(r.a);
     }
-    placeAt(r.a, runOut(travelled(r, sim.t), r.a.clear + r.a.len / 2, r.a.speed));
+    // A near-miss replay freezes at the crossing point; braking early could stop short of it (a child playing
+    // further into a street), so it only applies to normal runs.
+    const d = travelled(r, sim.t);
+    placeAt(r.a, sim.pair ? d : runOut(d, r.a.clear + r.a.len / 2, r.a.speed));
   }
   const [x, y] = sim.pair ?? [];
   if (x && y && sim.at && isNearMiss(x, y, sim.at)) {
