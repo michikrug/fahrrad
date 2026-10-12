@@ -267,6 +267,22 @@ const SIGNS: Record<SignId, SignDef> = {
     },
   },
   // Fußgängerüberweg (sign Z. 350; the road marking itself is Z. 293)
+  // Haltestelle: green H on a yellow disc with a green ring
+  "224": {
+    w: 0.6, h: 0.6, rim: { k: 0.94 },
+    shape: (c, W) => circle(c, W / 2, W / 2, W * 0.49),
+    paint: (c, W) => {
+      circle(c, W / 2, W / 2, W * 0.49);
+      fill(c, GREEN);
+      circle(c, W / 2, W / 2, W * 0.42);
+      fill(c, YELLOW);
+      c.fillStyle = GREEN;
+      c.font = `900 ${W * 0.5}px Arial, sans-serif`;
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      c.fillText("H", W / 2, W / 2 + W * 0.02);
+    },
+  },
   "350": {
     w: 0.7, h: 0.7, rim: { k: 0.94 },
     shape: (c, W) => roundRect(c, 2, 2, W - 4, W - 4, 10),

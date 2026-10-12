@@ -31,6 +31,7 @@ let level = new THREE.Group();
 let actors: Actor[] = [];
 let tapped: string[] = [];
 let lights = new Map<Arm, LightControl>();
+let hazards: THREE.Object3D[] = []; // hazard lights of a bus at a stop
 let clock = 0; // drives blinkers even while nobody moves
 
 /** Running drive animation. `pair` is watched for the near-miss freeze. */
@@ -150,7 +151,7 @@ function load(i: number) {
   mistakes = 0;
   disposeTree(level);
   const s = scenarios[i];
-  ({ group: level, lights } = buildLevel(s.layout));
+  ({ group: level, lights, hazards } = buildLevel(s.layout));
   actors = s.participants.map((p) => buildActor(p, s.layout));
   for (const a of actors) level.add(a.obj, a.route);
   world.scene.add(level);
@@ -383,6 +384,7 @@ world.onFrame((dt) => {
   stepSim(dt);
   clock += dt;
   for (const a of actors) updateSignal(a, clock, !!current().layout.roundabout);
+  for (const h of hazards) h.visible = clock % 0.8 < 0.45; // same beat as the blinkers
   rig.update(dt);
   updateSounds();
 });

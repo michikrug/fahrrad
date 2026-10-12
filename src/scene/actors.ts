@@ -67,6 +67,16 @@ function car(color: number) {
   return g;
 }
 
+/** Bus standing at a stop with its hazard lights (all four blinkers) on. Faces +z like every model. */
+export function parkedBus() {
+  const obj = bus();
+  const sig = blinkers(1.2, 5.45, 1.0);
+  const hazards = [...sig.left, ...sig.right];
+  obj.add(...hazards);
+  obj.traverse((o) => (o.castShadow = true));
+  return { obj, hazards };
+}
+
 function bus() {
   const g = new THREE.Group();
   g.add(box(2.5, 2.6, 11, lambert(0xf2c230), 0, 1.7, 0));

@@ -7,7 +7,7 @@ type Kind = "car" | "bus" | "bike" | "player" | "pedestrian";
 
 /** StVO sign numbers we can draw. "1002" = Zusatzzeichen for the bending priority road (drawn from Layout.priority). */
 export type SignId =
-  | "102" | "205" | "206" | "215" | "220" | "267" | "301" | "306" | "350" | "720" | "721" | "1002" | "1022-10" | "1000-32";
+  | "102" | "205" | "206" | "215" | "220" | "267" | "301" | "306" | "350" | "720" | "721" | "1002" | "1022-10" | "1000-32" | "224";
 
 export type Phase = "red" | "redyellow" | "yellow" | "green";
 
@@ -37,6 +37,11 @@ export interface ArmSpec {
   oneway?: boolean; // no centre line
   /** Not a road: a private driveway (Grundstückseinfahrt) up to a garage. Whoever comes out lets everyone go first (§ 10). */
   driveway?: true;
+  /**
+   * A bus stands at a stop (Z. 224) on this arm's arriving lane, hazard lights on (§ 20 Abs. 4). Scenery, not a
+   * participant: it does not move and is not tapped. A kid "getting off" is a walker on this arm's left side.
+   */
+  busStop?: true;
 }
 
 export interface Layout {

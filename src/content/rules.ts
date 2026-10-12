@@ -154,6 +154,14 @@ export const rules: RuleCard[] = [
     url: `${STVO}__10.html`,
   },
   {
+    id: "bus",
+    title: "Bus an der Haltestelle",
+    text: "Steht ein Bus an der Haltestelle und blinkt mit allen Blinkern (Warnblinker), fährst du nur in Schrittgeschwindigkeit vorbei – auch wenn er auf der anderen Straßenseite steht. Kinder könnten vor oder hinter dem Bus über die Straße laufen. Du lässt sie hinüber und wartest, wenn nötig.",
+    signs: ["224"],
+    source: "§ 20 Abs. 4 StVO",
+    url: `${STVO}__20.html`,
+  },
+  {
     id: "gehweg",
     icon: "🚸",
     title: "Gehweg oder Straße?",
@@ -174,6 +182,7 @@ export const signInfo: Record<SignId, { name: string; text: string }> = {
   "267": { name: "Verbot der Einfahrt", text: "Hier darfst du nicht hineinfahren." },
   "301": { name: "Vorfahrt", text: "An der nächsten Kreuzung hast du Vorfahrt." },
   "306": { name: "Vorfahrtstraße", text: "Du fährst auf der Vorfahrtstraße und hast an den Kreuzungen Vorfahrt." },
+  "224": { name: "Haltestelle", text: "Hier halten Busse. An einem Bus mit Warnblinkern fährst du nur ganz langsam vorbei." },
   "350": { name: "Fußgängerüberweg", text: "Hier ist ein Zebrastreifen. Wer zu Fuß hinüber will, darf zuerst." },
   "720": { name: "Grünpfeil", text: "Bei Rot nach dem Anhalten vorsichtig rechts abbiegen erlaubt." },
   "721": { name: "Grünpfeil nur für Radverkehr", text: "Wie der Grünpfeil – aber nur für Radfahrer." },

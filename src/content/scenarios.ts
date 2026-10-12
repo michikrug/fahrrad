@@ -13,6 +13,8 @@ const cross = (arms: Partial<Record<Arm, ArmSpec>> = {}): Layout => ({ arms: { N
 const tee = (arms: Partial<Record<Arm, ArmSpec>> = {}): Layout => ({ arms: { E: {}, S: {}, W: {}, ...arms } });
 /** Straight street (N–S) with a driveway on the east side; the west side has houses. */
 const driveway = (arms: Partial<Record<Arm, ArmSpec>> = {}): Layout => ({ arms: { N: {}, S: {}, E: { driveway: true }, ...arms } });
+/** Straight street (N–S) with a bus at a stop on the far side, ahead of you (it stands on the lane coming towards you). */
+const busStop = (): Layout => ({ arms: { N: { busStop: true }, S: {} } });
 /** Same sign(s) on the N/S road and on the E/W road. */
 const signed = (ns: SignId[], ew: SignId[]): Layout =>
   cross({ N: { signs: ns }, S: { signs: ns }, E: { signs: ew }, W: { signs: ew } });
@@ -487,6 +489,29 @@ const L10: Scenario[] = [
     },
     play: { groups: [["you"], ["car"]] },
     explain: "Du darfst zuerst fahren, denn das Auto kommt aus einer Einfahrt. Rechts vor links gilt hier nicht. Trotzdem bist du bremsbereit und schaust, ob der Fahrer dich gesehen hat.",
+  },
+  {
+    id: "bus-kid", rule: "bus", title: "Kind am Bus",
+    layout: busStop(),
+    participants: [you(), walker("kid", "N", -1, TEAL)], // -1: from the bus's side, just in front of it
+    answer: [["kid"], ["you"]],
+    explain: "Der Bus hält mit Warnblinkern, und ein Junge ist ausgestiegen. Er geht vor dem Bus über die Straße. Du fährst ganz langsam und lässt ihn hinüber.",
+  },
+  {
+    id: "bus-pass", rule: "bus", title: "Vorbei am Bus", view: "ego",
+    layout: busStop(),
+    participants: [you("straight", { back: 6 })], // further back so the bus is in the bike view
+    choice: {
+      question: "Auf der anderen Straßenseite hält ein Bus mit Warnblinkern. Wie fährst du vorbei?",
+      options: [
+        "Ganz langsam und bremsbereit, denn Kinder könnten vor dem Bus über die Straße laufen",
+        "Schnell, bevor der Bus wieder losfährt",
+        "Wie immer, der Bus steht ja auf der anderen Seite",
+      ],
+      correct: 0,
+    },
+    play: { groups: [["you"]] },
+    explain: "Bei einem Bus mit Warnblinkern fährst du nur in Schrittgeschwindigkeit vorbei – auch auf der anderen Straßenseite. Aus dem Bus können Kinder kommen und über die Straße laufen.",
   },
 ];
 
