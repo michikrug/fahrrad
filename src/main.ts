@@ -6,7 +6,7 @@ import { rules, signInfo } from "./content/rules";
 import { levels, scenarios } from "./content/scenarios";
 import { UNLOCK_SHARE, isUnlocked, levelStats, loadAutoRead, needsPractice, loadFree, loadProgress, loadSound, record, saveAutoRead, saveFree, saveProgress, saveSound } from "./progress";
 import { signCanvas } from "./scene/signs";
-import { clearTime, isNearMiss, listenForTaps, nearMissSchedule, schedule, travelled, type Run } from "./play";
+import { clearTime, isNearMiss, listenForTaps, nearMissSchedule, runOut, schedule, travelled, type Run } from "./play";
 import { buildActor, placeAt, updateSignal, type Actor } from "./scene/actors";
 import type { LightControl } from "./scene/lights";
 import { ARMS } from "./scene/roads";
@@ -330,7 +330,7 @@ function stepSim(dt: number) {
       r.released = true;
       switchLightsFor(r.a);
     }
-    placeAt(r.a, travelled(r, sim.t));
+    placeAt(r.a, runOut(travelled(r, sim.t), r.a.clear));
   }
   const [x, y] = sim.pair ?? [];
   if (x && y && sim.at && isNearMiss(x, y, sim.at)) {

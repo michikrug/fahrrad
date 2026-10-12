@@ -50,6 +50,17 @@ export interface Run {
   released?: boolean;
 }
 
+/** Metres after the junction at which vehicles are halted (they brake over the last `BRAKE` of them). */
+const RUN_OUT = 12, BRAKE = 5;
+
+/** Brakes `d` to a stop shortly after the junction, so nobody drives on to the far end of the drawn road. */
+export function runOut(d: number, clear: number) {
+  const brakeFrom = clear + RUN_OUT - BRAKE;
+  if (d <= brakeFrom) return d;
+  const x = Math.min(d - brakeFrom, BRAKE);
+  return brakeFrom + x - (x * x) / (2 * BRAKE); // constant deceleration from full speed to standstill
+}
+
 /** Metres driven along the path at time `t`. */
 export function travelled(r: Run, t: number) {
   const d = Math.max(0, t - r.start) * r.a.speed;
