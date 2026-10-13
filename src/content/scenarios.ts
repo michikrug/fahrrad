@@ -598,7 +598,7 @@ const L9: Scenario[] = [
     explain: "Deine Ampel ist rot. Das blaue Auto hat Grün – auch wenn es von links kommt. Die Ampel geht vor.",
   },
   {
-    id: "exam-redyellow", rule: "rot-gelb", title: "Prüfung: Rot und Gelb", view: "ego",
+    id: "exam-redyellow", rule: "rot-gelb", title: "Prüfung: Rot und Gelb", hideRoutes: true, view: "ego",
     layout: lights("red", "redyellow"),
     participants: [you("straight", { arm: "W", back: 6 })],
     choice: {
@@ -617,7 +617,7 @@ const L9: Scenario[] = [
     explain: "Du biegst rechts ab, und am Zebrastreifen in der neuen Straße will ein Junge hinüber. Du lässt ihn zuerst gehen.",
   },
   {
-    id: "exam-push", rule: "zebra-schieben", title: "Prüfung: Rad am Zebrastreifen", view: "ego",
+    id: "exam-push", rule: "zebra-schieben", title: "Prüfung: Rad am Zebrastreifen", hideRoutes: true, view: "ego",
     layout: cross({ S: { zebra: true } }),
     participants: [you("straight", { crossing: -1 }), car("car", "S", "straight", RED, { back: 8 })],
     choice: {
@@ -628,18 +628,18 @@ const L9: Scenario[] = [
     explain: "Nur wer schiebt, ist ein Fußgänger. Dann muss das Auto dich über den Zebrastreifen lassen. Wenn du fährst, musst du warten.",
   },
   {
-    id: "exam-oneway", rule: "einbahn", title: "Prüfung: Einfahrt verboten", // choice: the arrow shows which way is meant
+    id: "exam-oneway", rule: "einbahn", title: "Prüfung: Einfahrt verboten", hideRoutes: true, view: "ego",
     layout: cross({ E: { oneway: true, exitSigns: ["267"] } }),
-    participants: [you("right")],
+    participants: [you("right", { back: 6 })], // bike view from further back: the red sign must be visible
     choice: {
-      question: "Du willst rechts in diese Straße abbiegen. Darfst du hineinfahren?",
+      question: "Du willst nach rechts in die Straße mit dem roten Schild abbiegen. Darfst du hineinfahren?",
       options: ["Nein, hier darf niemand hinein", "Ja, beim Abbiegen gilt das Schild nicht", "Ja, wenn ich vorher klingle"],
       correct: 0,
     },
     explain: "Das rote Schild mit dem weißen Balken gilt auch, wenn du abbiegst. Ohne Zusatzschild darf niemand hinein – auch du nicht.",
   },
   {
-    id: "exam-left", rule: "links-abbiegen", title: "Prüfung: Links abbiegen", // choice: the arrow shows which way is meant
+    id: "exam-left", rule: "links-abbiegen", title: "Prüfung: Links abbiegen", hideRoutes: true,
     layout: cross(),
     participants: [you("left", { arm: "E" }), car("car1", "W", "straight", RED), car("car2", "N", "straight", TEAL)],
     choice: {

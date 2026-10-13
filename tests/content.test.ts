@@ -66,3 +66,7 @@ test("rule cards are unique, cite a source, and only use signs from the cheat sh
     for (const id of r.signs ?? []) expect(signInfo[id]).toBeDefined();
   }
 });
+
+test("the exam gives no route arrows", () => {
+  for (const s of levels.find((l) => l.id === "exam")!.scenarios) expect(s.hideRoutes, s.id).toBe(true);
+});
